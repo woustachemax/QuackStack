@@ -1,0 +1,1 @@
+{"root":["./src/cli.ts","./src/commands/ingest.ts","./src/commands/init.ts","./src/commands/search.ts","./src/lib/chunker.ts","./src/lib/database.ts","./src/lib/embeddings.ts","./src/lib/scanner.ts","./src/test/tests.ts"],"version":"5.9.3"}

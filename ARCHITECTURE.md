@@ -474,4 +474,3 @@ A: Quality matters more than cost for V1. Local model can be optional in V2.
 ---
 
 **Author:** [Siddharth Thakkar](https://www.siddharththakkar.xyz/)
-```
