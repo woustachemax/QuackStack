@@ -1,4 +1,4 @@
-import { getfromDB, saveToDB } from "../lib/database";
+// import { getfromDB, saveToDB } from "../lib/database.js";
 
 
 // async function main() {
@@ -13,8 +13,8 @@ import { getfromDB, saveToDB } from "../lib/database";
 //   });
 // }
 
-async function main() {
-  await getfromDB("test-project");
-}
+// // async function main() {
+// //   await getfromDB("test-project");
+// // }
 
-main();
+// main();
