@@ -21,7 +21,6 @@ export const saveToDB = async (data: SaveToDBProps) => {
       },
     });
 
-    console.log("Saved to DB:", result.id);
     return result;
 
   } catch (e: unknown) {
@@ -30,27 +29,26 @@ export const saveToDB = async (data: SaveToDBProps) => {
     } else {
       console.error(`Unknown error saving to DB:`, e);
     }
+    throw e;
   }
 };
 
-
-export const getfromDB = async (projectName: string) =>{
-  try{
-    const results =  await client.codeSnippet.findMany({
+export const getFromDB = async (projectName: string) => {
+  try {
+    const results = await client.codeSnippet.findMany({
       where: {
         projectName: projectName
       }
     });
 
-    console.log(`Found : ${results.length} snippets for project ${projectName}, returning all:
-    ${results.map(r=>r.content)}}`)
     return results;
   }
-  catch(e: unknown){
-     if (e instanceof Error) {
-      console.error(`Error saving to DB: ${e.message}`);
+  catch (e: unknown) {
+    if (e instanceof Error) {
+      console.error(`Error fetching from DB: ${e.message}`);
     } else {
-      console.error(`Unknown error saving to DB:`, e);
+      console.error(`Unknown error fetching from DB:`, e);
     }
+    throw e;
   }
 }

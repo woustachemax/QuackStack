@@ -1,34 +1,50 @@
 import fs from "fs";
 import path from "path";
 import { scanDir } from "../lib/scanner.js";
-import { chunkText } from "../lib/chunker.js";
-import { getEmbeddings } from "../lib/embeddings.js";
+import { chunkCode } from "../lib/chunker.js";
+import { aiClient } from "../lib/ai-provider.js";
 import { saveToDB } from "../lib/database.js";
 
-const PROJECT_NAME = "quackstack";
-
-async function ingest(rootDir: string) {
-  console.log("Starting ingestion...");
+export async function ingest(
+  rootDir: string, 
+  projectName: string,
+  silent = false
+) {
+  if (!silent) console.log("Starting ingestion...");
+  
   const files = await scanDir(rootDir);
+  
+  if (!silent) console.log(`Found ${files.length} files to process`);
 
+  let processedCount = 0;
+  
   for (const filePath of files) {
-    const content = fs.readFileSync(filePath, "utf-8");
-    const chunks = chunkText(content);
+    try {
+      const content = fs.readFileSync(filePath, "utf-8");
+      const chunks = chunkCode(content, filePath);
 
-    for (const chunk of chunks) {
-      const embedding = await getEmbeddings(chunk);
-      await saveToDB({
-        content: chunk,
-        embedding,
-        filePath,
-        projectName: PROJECT_NAME,
-        language: path.extname(filePath),
-      });
+      for (const chunk of chunks) {
+        const embedding = await aiClient.getEmbeddings(chunk.content);
+        await saveToDB({
+          content: chunk.content,
+          embedding,
+          filePath,
+          projectName,
+          language: path.extname(filePath),
+          functionName: chunk.functionName,
+          lineStart: chunk.lineStart,
+          lineEnd: chunk.lineEnd,
+        });
+      }
+      
+      processedCount++;
+      if (!silent && processedCount % 10 === 0) {
+        console.log(`Processed ${processedCount}/${files.length} files...`);
+      }
+    } catch (error) {
+      console.error(`Error processing ${filePath}:`, error);
     }
-    console.log(`Processed ${filePath}`);
   }
 
-  console.log("Done!");
+  if (!silent) console.log(`Done! Processed ${processedCount} files.`);
 }
-
-export { ingest };

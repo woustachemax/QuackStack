@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { getEmbeddings } from "../lib/embeddings.js";
 import { client } from "../lib/database.js";
+import { aiClient } from "../lib/ai-provider.js";
 
 function cosineSim(a: number[], b: number[]) {
   let dot = 0, normA = 0, normB = 0;
@@ -13,19 +13,36 @@ function cosineSim(a: number[], b: number[]) {
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-export async function search(query: string, projectName = "quackstack") {
-  const queryEmbedding = await getEmbeddings(query);
+type SearchResult = {
+  id: number;
+  content: string;
+  filePath: string;
+  functionName: string | null;
+  score: number;
+};
+
+export async function search(query: string, projectName: string) {
+  const queryEmbedding = await aiClient.getEmbeddings(query);
   const snippets = await client.codeSnippet.findMany({
     where: { projectName },
   });
 
   const ranked = snippets
     .map(snippet => ({
-      ...snippet,
+      id: snippet.id,
+      content: snippet.content,
+      filePath: snippet.filePath,
+      functionName: snippet.functionName,
       score: cosineSim(queryEmbedding, snippet.embedding as number[]),
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
-  return ranked;
+  const context = ranked
+    .map((r, i) => `[${i + 1}] ${r.filePath}${r.functionName ? ` (${r.functionName})` : ""}\n${r.content}`)
+    .join("\n\n---\n\n");
+
+  const answer = await aiClient.generateAnswer(query, context);
+  
+  return { answer, sources: ranked };
 }

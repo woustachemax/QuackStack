@@ -1,17 +1,61 @@
 import fs from "fs";
 import path from "path";
 
-export async function scanDir(rootDir: string, exts = [".ts", ".js", ".tsx", ".jsx", ".py"]): Promise<string[]> {
+const IGNORE_DIRS = [
+  "node_modules",
+  ".git",
+  "dist",
+  "build",
+  "target",
+  "__pycache__",
+  ".next",
+  ".nuxt",
+  "coverage",
+  ".cache",
+  "vendor",
+  "tmp",
+  "temp",
+];
+
+const DEFAULT_EXTENSIONS = [
+  ".ts", ".js", ".tsx", ".jsx", ".mjs", ".cjs",
+  ".py", ".pyw",
+  ".go",
+  ".rs",
+ ".java",
+  ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hxx",
+  ".cs",
+  ".rb", ".php", ".swift", ".kt", ".kts", ".scala", ".r",
+  ".vue", ".svelte",
+];
+
+export async function scanDir(
+  rootDir: string, 
+  exts = DEFAULT_EXTENSIONS
+): Promise<string[]> {
   const files: string[] = [];
 
   async function walk(dir: string) {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (e) {
+      return;
+    }
+
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
+      
       if (entry.isDirectory()) {
+        if (IGNORE_DIRS.includes(entry.name)) {
+          continue;
+        }
         await walk(fullPath);
-      } else if (exts.includes(path.extname(entry.name))) {
-        files.push(fullPath);
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name);
+        if (exts.includes(ext)) {
+          files.push(fullPath);
+        }
       }
     }
   }
