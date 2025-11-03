@@ -1,34 +1,69 @@
 {
   "name": "quackstack",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "description": "Your cracked unpaid intern for all things codebase related! AI-powered codebase search and Q&A.",
   "type": "module",
+  "main": "dist/cli.cjs",
+  "bin": {
+    "quack": "./dist/cli.cjs"
+  },
+  "files": [
+    "dist",
+    "prisma",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b && node dist/cli.cjs",
+    "prepare": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "bin": "",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "cli",
+    "ai",
+    "embeddings",
+    "code-search",
+    "codebase",
+    "cursor",
+    "cursor-ai",
+    "semantic-search",
+    "code-assistant",
+    "openai",
+    "claude",
+    "gemini",
+    "deepseek",
+    "mistral"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/woustachemax/quackstack.git"
+  },
+  "author": "woustachemax",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
     "@babel/parser": "^7.28.5",
     "@babel/traverse": "^7.28.5",
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.16.3",
     "chalk": "^5.6.2",
     "chalk-animation": "^2.0.3",
     "commander": "^14.0.1",
     "dotenv": "^17.2.3",
-    "glob": "^11.0.3",
-    "openai": "^6.0.1",
-    "ora": "^9.0.0",
-    "simple-git": "^3.28.0",
-    "typescript": "^5.9.3"
+    "openai": "^6.0.1"
   },
   "devDependencies": {
     "@types/babel__traverse": "^7.28.0",
     "@types/chalk-animation": "^1.6.3",
-    "prisma": "^6.16.3"
+    "@types/node": "^20.0.0",
+    "prisma": "^6.16.3",
+    "typescript": "^5.9.3"
   }
 }
