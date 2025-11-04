@@ -10,6 +10,8 @@
   "files": [
     "dist",
     "prisma",
+    "node_modules/.prisma",
+    "node_modules/@prisma/client",
     "README.md",
     "LICENSE",
     ".npmrc"
@@ -18,10 +20,10 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "prisma generate && tsc -b",
     "dev": "tsc -b && node dist/cli.cjs",
     "prepare": "prisma generate",
-    "postinstall": "prisma generate"
+    "prepack": "prisma generate"
   },
   "keywords": [
     "cli",
@@ -37,13 +39,22 @@
     "claude",
     "gemini",
     "deepseek",
-    "mistral"
+    "mistral",
+    "developer-tools",
+    "productivity"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/woustachemax/quackstack.git"
   },
-  "author": "woustachemax",
+  "homepage": "https://github.com/woustachemax/quackstack#readme",
+  "bugs": {
+    "url": "https://github.com/woustachemax/quackstack/issues"
+  },
+  "author": {
+    "name": "woustachemax",
+    "url": "https://github.com/woustachemax"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=20.0.0"
