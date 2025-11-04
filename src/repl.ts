@@ -20,7 +20,7 @@ async function ensureIngested(forceReindex = false) {
     }
     
     console.log("🔍 Indexing your codebase (this may take a moment)...");
-    await ingest(process.cwd(), PROJECT_NAME, true); 
+    await ingest(process.cwd(), PROJECT_NAME, true);
     console.log("✅ Indexing complete!\n");
   }
 }
@@ -31,28 +31,30 @@ export async function startREPL(forceReindex = false) {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: "🐥 Quack! How can I help? > "
+    terminal: true
   });
 
   console.log("💡 Tip: Press Ctrl+C to exit\n");
-  rl.prompt();
 
-  rl.on("line", async (input) => {
-    const trimmed = input.trim();
-    
-    if (!trimmed) {
-      rl.prompt();
-      return;
-    }
-
-    try {
-      const { answer, sources } = await search(trimmed, PROJECT_NAME);
-      console.log(`\n${answer}\n`);
+  const askQuestion = () => {
+    rl.question("🐥 Quack! How can I help? > ", async (input) => {
+      const trimmed = input.trim();
       
-      await new Promise<void>((resolve) => {
+      if (!trimmed) {
+        askQuestion();
+        return;
+      }
+
+      try {
+        rl.pause();
+        
+        const { answer, sources } = await search(trimmed, PROJECT_NAME);
+        console.log(`\n${answer}\n`);
+        
         const detailRL = readline.createInterface({
           input: process.stdin,
-          output: process.stdout
+          output: process.stdout,
+          terminal: true
         });
         
         detailRL.question("💡 Want more details? (y/n) > ", (ans) => {
@@ -66,16 +68,20 @@ export async function startREPL(forceReindex = false) {
           }
           detailRL.close();
           console.log();
-          resolve();
+          
+          rl.resume();
+          askQuestion();
         });
-      });
-      
-    } catch (error) {
-      console.error("❌ Error:", error instanceof Error ? error.message : "Unknown error");
-    }
-    
-    rl.prompt();
-  });
+        
+      } catch (error) {
+        console.error("❌ Error:", error instanceof Error ? error.message : "Unknown error");
+        rl.resume();
+        askQuestion();
+      }
+    });
+  };
+
+  askQuestion();
 
   rl.on("close", () => {
     console.log("\n👋 Happy coding!");

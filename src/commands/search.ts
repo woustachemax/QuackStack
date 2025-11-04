@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { client } from "../lib/database.js";
 import { aiClient } from "../lib/ai-provider.js";
+import { client } from "../lib/database.js";
 
 function cosineSim(a: number[], b: number[]) {
   let dot = 0, normA = 0, normB = 0;
@@ -27,16 +27,24 @@ export async function search(query: string, projectName: string) {
     where: { projectName },
   });
 
-  const ranked = snippets
-    .map(snippet => ({
-      id: snippet.id,
-      content: snippet.content,
-      filePath: snippet.filePath,
-      functionName: snippet.functionName,
-      score: cosineSim(queryEmbedding, snippet.embedding as number[]),
-    }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
+  const scored = snippets.map(snippet => ({
+    id: snippet.id,
+    content: snippet.content,
+    filePath: snippet.filePath,
+    functionName: snippet.functionName,
+    score: cosineSim(queryEmbedding, snippet.embedding as number[]),
+  }));
+
+  scored.sort((a, b) => b.score - a.score);
+
+  const seenFiles = new Set<string>();
+  const ranked = scored.filter(item => {
+    if (seenFiles.has(item.filePath)) {
+      return false;
+    }
+    seenFiles.add(item.filePath);
+    return true;
+  }).slice(0, 5);
 
   const context = ranked
     .map((r, i) => `[${i + 1}] ${r.filePath}${r.functionName ? ` (${r.functionName})` : ""}\n${r.content}`)

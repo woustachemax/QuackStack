@@ -5,6 +5,7 @@ import { chunkCode } from "../lib/chunker.js";
 import { aiClient } from "../lib/ai-provider.js";
 import { saveToDB } from "../lib/database.js";
 
+
 export async function ingest(
   rootDir: string, 
   projectName: string,
@@ -18,33 +19,38 @@ export async function ingest(
 
   let processedCount = 0;
   
-  for (const filePath of files) {
-    try {
-      const content = fs.readFileSync(filePath, "utf-8");
-      const chunks = chunkCode(content, filePath);
+  const BATCH_SIZE = 10;
 
-      for (const chunk of chunks) {
-        const embedding = await aiClient.getEmbeddings(chunk.content);
-        await saveToDB({
-          content: chunk.content,
-          embedding,
-          filePath,
-          projectName,
-          language: path.extname(filePath),
-          functionName: chunk.functionName,
-          lineStart: chunk.lineStart,
-          lineEnd: chunk.lineEnd,
-        });
+  for (let i = 0; i < files.length; i += BATCH_SIZE) {
+    const batch = files.slice(i, i + BATCH_SIZE);
+    
+    await Promise.all(batch.map(async (filePath) => {
+      try {
+        const content = fs.readFileSync(filePath, "utf-8");
+        const chunks = chunkCode(content, filePath);
+
+        for (const chunk of chunks) {
+          const embedding = await aiClient.getEmbeddings(chunk.content);
+          await saveToDB({
+            content: chunk.content,
+            embedding,
+            filePath,
+            projectName,
+            language: path.extname(filePath),
+            functionName: chunk.functionName,
+            lineStart: chunk.lineStart,
+            lineEnd: chunk.lineEnd,
+          });
+        }
+        
+        processedCount++;
+        if (!silent && processedCount % 10 === 0) {
+          console.log(`Processed ${processedCount}/${files.length} files...`);
+        }
+      } catch (error) {
+        console.error(`Error processing ${filePath}:`, error);
       }
-      
-      processedCount++;
-      if (!silent && processedCount % 10 === 0) {
-        console.log(`Processed ${processedCount}/${files.length} files...`);
-      }
-    } catch (error) {
-      console.error(`Error processing ${filePath}:`, error);
-    }
+    }));
   }
-
-  if (!silent) console.log(`Done! Processed ${processedCount} files.`);
-}
+    if (!silent) console.log(`Done! Processed ${processedCount} files.`);
+  }

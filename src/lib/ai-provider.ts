@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 type AIProvider = "openai" | "anthropic" | "gemini" | "deepseek" | "mistral";
 
