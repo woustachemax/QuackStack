@@ -3,7 +3,7 @@
 import { Command } from "commander";
 import ChalkAnimation from "chalk-animation";
 import { startREPL } from "./repl.js";
-import { generateCursorContext, updateCursorGlobalContext, watchAndUpdateCursor } from "./lib/cursor-context.js";
+import { generateContextFiles, updateGlobalContext, watchAndUpdateContext } from "./lib/context-generator.js";
 import path from "path";
 
 const program = new Command();
@@ -12,28 +12,37 @@ const PROJECT_NAME = path.basename(process.cwd());
 program
   .name("quackstack")
   .description("Your cracked unpaid intern for all things codebase!")
-  .version("1.0.0")
+  .version("1.0.4")
   .option("-r, --reindex", "Force reindex the codebase")
-  .option("-c, --cursor", "Generate .cursorrules file for Cursor AI")
-  .option("-w, --watch", "Watch mode: auto-update Cursor context on file changes")
+  .option("-c, --context", "Generate context files for ALL AI coding tools (Cursor, Windsurf, Cline, Continue, Aider)")
+  .option("-d, --docs", "Generate CODEBASE.md - universal documentation for any IDE/editor")
+  .option("--cursor", "[DEPRECATED] Use --context instead. Generates .cursorrules only")
+  .option("-w, --watch", "Watch mode: auto-update context files on file changes")
   .action(async (options) => {
     const title = ChalkAnimation.rainbow("Welcome to QuackStack! 🐥\n");
     await new Promise(res => setTimeout(res, 1500));
     title.stop();
     
+    if (options.context) {
+      await generateContextFiles(PROJECT_NAME);
+      await updateGlobalContext(PROJECT_NAME);
+      process.exit(0);
+    }
+
     if (options.cursor) {
-      console.log("🔍 Generating Cursor context...\n");
-      await generateCursorContext(PROJECT_NAME);
-      await updateCursorGlobalContext(PROJECT_NAME);
-      console.log("\n✅ Cursor integration complete!");
-      console.log("💡 Cursor will now have context about your codebase");
+      console.log("⚠️  --cursor is deprecated. Use --context to support all AI tools.\n");
+      console.log("🔍 Generating context for AI assistants...\n");
+      await generateContextFiles(PROJECT_NAME);
+      await updateGlobalContext(PROJECT_NAME);
+      console.log("\n✅ Context generation complete!");
+      console.log("💡 Your AI coding assistant will now have codebase context");
       process.exit(0);
     }
 
     if (options.watch) {
-      console.log("👀 Starting watch mode for Cursor context...\n");
-      await generateCursorContext(PROJECT_NAME);
-      watchAndUpdateCursor(PROJECT_NAME);
+      console.log("👀 Starting watch mode...\n");
+      await generateContextFiles(PROJECT_NAME);
+      watchAndUpdateContext(PROJECT_NAME);
       await new Promise(() => {});
     }
 
