@@ -1,19 +1,19 @@
 {
   "name": "quackstack",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Your cracked unpaid intern for all things codebase related! AI-powered codebase search and Q&A.",
   "type": "module",
   "main": "dist/cli.cjs",
   "bin": {
     "quack": "./dist/cli.cjs"
   },
-"files": [
-  "dist",
-  "prisma",
-  "README.md",
-  "LICENSE",
-  ".npmrc"
-],
+  "files": [
+    "dist",
+    "prisma",
+    "README.md",
+    "LICENSE",
+    ".npmrc"
+  ],
   "publishConfig": {
     "access": "public"
   },
