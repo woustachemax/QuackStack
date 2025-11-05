@@ -23,7 +23,8 @@
     "build": "prisma generate && tsc -b",
     "dev": "tsc -b && node dist/cli.cjs",
     "prepare": "prisma generate",
-    "prepack": "prisma generate"
+    "prepack": "prisma generate",
+    "postinstall": "prisma generate"
   },
   "keywords": [
     "cli",
