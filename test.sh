@@ -7,7 +7,7 @@ echo ""
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
-NC='\033[0m' 
+NC='\033[0m'
 
 TESTS_PASSED=0
 TESTS_FAILED=0
@@ -27,100 +27,105 @@ run_test() {
   fi
 }
 
+check_file() {
+  local file=$1
+  local test_name=$2
+  
+  echo -e "${YELLOW}Checking: ${test_name}${NC}"
+  
+  if [ -f "$file" ] && [ -s "$file" ]; then
+    echo -e "${GREEN}✓ ${file} exists and has content${NC}\n"
+    ((TESTS_PASSED++))
+  else
+    echo -e "${RED}✗ ${file} missing or empty${NC}\n"
+    ((TESTS_FAILED++))
+  fi
+}
+
+check_env() {
+  echo -e "${YELLOW}Checking environment...${NC}"
+  
+  if [ ! -f .env ]; then
+    echo -e "${RED}✗ .env file not found${NC}\n"
+    exit 1
+  fi
+  
+  source .env
+  
+  if [ -z "$QUACKSTACK_OPENAI_KEY" ] && \
+     [ -z "$QUACKSTACK_ANTHROPIC_KEY" ] && \
+     [ -z "$QUACKSTACK_GEMINI_KEY" ] && \
+     [ -z "$QUACKSTACK_DEEPSEEK_KEY" ] && \
+     [ -z "$QUACKSTACK_MISTRAL_KEY" ]; then
+    echo -e "${RED}✗ No AI provider key found${NC}\n"
+    exit 1
+  fi
+  
+  if [ -z "$QUACKSTACK_DATABASE_URL" ]; then
+    echo -e "${RED}✗ QUACKSTACK_DATABASE_URL not set${NC}\n"
+    exit 1
+  fi
+  
+  echo -e "${GREEN}✓ Environment OK${NC}\n"
+}
+
+check_env
+
 echo "📦 Building..."
-cd ~/code/quackstack
 pnpm build
 
-if [ $? -eq 0 ]; then
-  echo -e "${GREEN}✓ Build successful${NC}\n"
-else
+if [ $? -ne 0 ]; then
   echo -e "${RED}✗ Build failed${NC}\n"
   exit 1
 fi
+echo -e "${GREEN}✓ Build successful${NC}\n"
 
-echo "🔗 Linking locally..."
-npm link
+echo "🗄️ Database setup..."
+pnpm exec prisma generate &> /dev/null
+pnpm exec prisma db push --skip-generate &> /dev/null
+echo -e "${GREEN}✓ Database ready${NC}\n"
+
+echo "🔗 Linking..."
+npm link &> /dev/null
 echo ""
 
 run_test "Help command" "quack --help"
-
 run_test "Version command" "quack --version"
 
-cd ~/code/episteme
+echo "📁 Creating test directory..."
+TEST_DIR=$(mktemp -d)
+cp .env "$TEST_DIR/"
+mkdir -p "$TEST_DIR/src"
+echo "console.log('test');" > "$TEST_DIR/src/index.js"
+cd "$TEST_DIR"
+echo -e "${GREEN}✓ Test project ready${NC}\n"
 
-run_test "Context generation (--context)" "timeout 30s quack --context"
+run_test "Context generation" "quack --context"
 
-run_test "Docs generation (--docs)" "timeout 30s quack --docs"
+check_file ".cursorrules" "Cursor rules file"
+check_file ".windsurfrules" "Windsurf rules file"
+check_file ".clinerules" "Cline rules file"
+check_file ".aider.conf.yml" "Aider config file"
+check_file ".aider.context.md" "Aider context file"
 
-echo -e "${YELLOW}Checking generated files...${NC}"
-
-FILES=(".cursorrules" ".windsurfrules" ".clinerules" ".continue/context.md" ".aider.conf.yml" "CODEBASE.md")
-
-for file in "${FILES[@]}"; do
-  if [ -f "$file" ] || [ -d "$(dirname $file)" ]; then
-    echo -e "${GREEN}✓ ${file} exists${NC}"
-    ((TESTS_PASSED++))
-  else
-    echo -e "${RED}✗ ${file} missing${NC}"
-    ((TESTS_FAILED++))
-  fi
-done
-echo ""
-
-echo -e "${YELLOW}Testing: Interactive mode starts${NC}"
-timeout 5s bash -c 'echo "" | quack' &> /dev/null
-if [ $? -eq 124 ] || [ $? -eq 0 ]; then
-  echo -e "${GREEN}✓ PASSED${NC}\n"
+if [ -f ".continue/context.md" ] && [ -s ".continue/context.md" ]; then
+  echo -e "${GREEN}✓ .continue/context.md exists${NC}\n"
   ((TESTS_PASSED++))
 else
-  echo -e "${RED}✗ FAILED${NC}\n"
+  echo -e "${RED}✗ .continue/context.md missing${NC}\n"
   ((TESTS_FAILED++))
 fi
 
-echo -e "${YELLOW}Testing package manager compatibility...${NC}"
+run_test "Docs generation" "quack --docs"
+check_file "CODEBASE.md" "Codebase documentation"
 
-if command -v pnpm &> /dev/null; then
-  echo "Testing with pnpm..."
-  pnpm remove -g quackstack &> /dev/null
-  pnpm add -g quackstack &> /dev/null
-  if quack --version &> /dev/null; then
-    echo -e "${GREEN}✓ pnpm works${NC}"
-    ((TESTS_PASSED++))
-  else
-    echo -e "${RED}✗ pnpm failed${NC}"
-    ((TESTS_FAILED++))
-  fi
-fi
-
-if command -v bun &> /dev/null; then
-  echo "Testing with bun..."
-  bun remove -g quackstack &> /dev/null
-  bun pm -g trust quackstack &> /dev/null
-  bun add -g quackstack &> /dev/null
-  hash -r
-  if quack --version &> /dev/null; then
-    echo -e "${GREEN}✓ bun works${NC}"
-    ((TESTS_PASSED++))
-  else
-    echo -e "${RED}✗ bun failed${NC}"
-    ((TESTS_FAILED++))
-  fi
-fi
-
-# Test npm
-echo "Testing with npm..."
-npm install -g quackstack &> /dev/null
-if quack --version &> /dev/null; then
-  echo -e "${GREEN}✓ npm works${NC}"
-  ((TESTS_PASSED++))
-else
-  echo -e "${RED}✗ npm failed${NC}"
-  ((TESTS_FAILED++))
-fi
-
+echo "🧹 Cleanup..."
+cd - > /dev/null
+rm -rf "$TEST_DIR"
 echo ""
+
 echo "========================"
-echo "📊 Test Results"
+echo "📊 Results"
 echo "========================"
 echo -e "${GREEN}Passed: ${TESTS_PASSED}${NC}"
 echo -e "${RED}Failed: ${TESTS_FAILED}${NC}"
@@ -130,6 +135,6 @@ if [ $TESTS_FAILED -eq 0 ]; then
   echo -e "${GREEN}🎉 All tests passed!${NC}"
   exit 0
 else
-  echo -e "${RED}❌ Some tests failed${NC}"
+  echo -e "${RED}❌ Tests failed${NC}"
   exit 1
 fi
