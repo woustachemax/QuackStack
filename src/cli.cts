@@ -4,6 +4,7 @@ import { Command } from "commander";
 import ChalkAnimation from "chalk-animation";
 import { startREPL } from "./repl.js";
 import { generateContextFiles, updateGlobalContext, watchAndUpdateContext } from "./lib/context-generator.js";
+import { generateReadme } from "./commands/readme.js";
 import path from "path";
 
 const program = new Command();
@@ -16,6 +17,7 @@ program
   .option("-r, --reindex", "Force reindex the codebase")
   .option("-c, --context", "Generate context files for ALL AI coding tools (Cursor, Windsurf, Cline, Continue, Aider)")
   .option("-d, --docs", "Generate CODEBASE.md - universal documentation for any IDE/editor")
+  .option("--readme", "Generate README.md from your codebase")
   .option("--cursor", "[DEPRECATED] Use --context instead. Generates .cursorrules only")
   .option("-w, --watch", "Watch mode: auto-update context files on file changes")
   .action(async (options) => {
@@ -23,6 +25,11 @@ program
     await new Promise(res => setTimeout(res, 1500));
     title.stop();
     
+    if (options.readme) {
+      await generateReadme(PROJECT_NAME);
+      process.exit(0);
+    }
+
     if (options.context) {
       await generateContextFiles(PROJECT_NAME);
       await updateGlobalContext(PROJECT_NAME);
