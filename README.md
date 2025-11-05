@@ -2,28 +2,27 @@
 
 **Your cracked unpaid intern for all things codebase related!**
 
-QuackStack is an interactive CLI tool that indexes your codebase using AI embeddings and lets you ask questions about it conversationally. Perfect for understanding unfamiliar code, onboarding to new projects, or giving your AI coding assistant persistent context.
-
+QuackStack is an interactive CLI tool that indexes your codebase using local AI embeddings and lets you ask questions about it conversationally. Perfect for understanding unfamiliar code, onboarding to new projects, or giving your AI coding assistant persistent context.
 
 ## ✨ Features
 
 * 🚀 **Zero-config** - Just run `quack` in any project directory
 * 🧠 **Smart code parsing** - Automatically extracts functions and classes
 * 💬 **Interactive REPL** - Ask questions conversationally, stays open until Ctrl+C
-* 🤖 **Multi-AI support** - Works with OpenAI, Claude, Gemini, DeepSeek, or Mistral
-* 🎯 **Cursor integration** - Auto-generate `.cursorrules` for Cursor AI
+* 🔒 **100% Local embeddings** - No API calls for vector generation, your code stays private
+* 🤖 **AI-powered answers** - Uses OpenAI, Claude, Gemini, DeepSeek, or Mistral for conversational responses
+* 🎯 **Universal AI tool support** - Auto-generate context for Cursor, Windsurf, Cline, Continue, and Aider
 * 📦 **Local database** - Your code stays on your infrastructure
 * 🌍 **Multi-language** - Supports JS/TS, Python, Go, Rust, Java, C/C++, C#, Ruby, PHP, Swift, Kotlin, and more
-
 
 ## 📦 Installation
 
 ### Global Install (Recommended)
 
 ```bash
-pnpm add -g quackstack
-
 npm install -g quackstack
+# or
+pnpm add -g quackstack
 ```
 
 ### Local Development
@@ -35,18 +34,18 @@ pnpm install
 pnpm build
 ```
 
-
 ## ⚙️ Setup
 
 ### 1. Create `.env` in your project root
 
 ```bash
-# REQUIRED!
+# REQUIRED: Database for storing code embeddings
 QUACKSTACK_DATABASE_URL=postgresql://user:pass@host:port/dbname
 
-# Choose ONE AI provider:
+# REQUIRED: Choose ONE AI provider for conversational answers
+# (Embeddings are computed locally - no API calls!)
 
-# Option 1: OpenAI (RECOOMMENDED!)
+# Option 1: OpenAI (RECOMMENDED)
 QUACKSTACK_OPENAI_KEY=sk-...
 
 # Option 2: Anthropic Claude
@@ -60,9 +59,6 @@ QUACKSTACK_DEEPSEEK_KEY=sk-...
 
 # Option 5: Mistral AI
 QUACKSTACK_MISTRAL_KEY=...
-
-# NOTE: If using Claude/Gemini/Mistral, you still NEED OpenAI for embeddings:
-QUACKSTACK_EMBEDDING_KEY=sk-...
 ```
 
 ### 2. Initialize database
@@ -72,7 +68,6 @@ npx prisma generate
 npx prisma db push
 ```
 
-
 ## 🚀 Usage
 
 ### Interactive Mode (Default)
@@ -80,34 +75,32 @@ npx prisma db push
 ```bash
 quack
 
-
-🐥 Quack! How can I help? > where is authentication handled?
-
 # Answer appears with context
 # Press Ctrl+C to exit
 ```
 
-### Generate Cursor Context
+### Generate Context for ALL AI Coding Tools
 
 ```bash
-quack --cursor
+quack --context
 
-# Creates .cursorrules file with:
-# - Architecture overview
-# - Main entry points
-# - Key functions and files
-# - Project structure
+# Creates context files for:
+# - Cursor (.cursorrules)
+# - Windsurf (.windsurfrules)
+# - Cline (.clinerules)
+# - Continue (.continue/context.md)
+# - Aider (.aider.conf.yml)
 
-# Cursor AI automatically reads this file!
+# Your AI coding assistants automatically read these files!
 ```
 
-### Watch Mode (Auto-update Cursor)
+### Watch Mode (Auto-update Context)
 
 ```bash
 quack --watch
 
 # Watches for file changes
-# Auto-regenerates .cursorrules
+# Auto-regenerates all context files
 # Keep running in background during development
 ```
 
@@ -118,7 +111,6 @@ quack --reindex
 
 # Clears old index and re-scans entire codebase
 ```
-
 
 ## 📖 Example Session
 
@@ -132,8 +124,8 @@ Welcome to QuackStack! 🐥
 
 🐥 Quack! How can I help? > how does the search function work?
 
-The search function converts your query to embeddings, compares them
-against stored code embeddings using cosine similarity, ranks results,
+The search function uses local embeddings to convert your query into a vector,
+compares it against stored code embeddings using cosine similarity, ranks results,
 and feeds the top matches to the AI for a conversational answer.
 
 Implementation is in src/commands/search.ts
@@ -144,18 +136,16 @@ Implementation is in src/commands/search.ts
 
 [1] src/commands/search.ts (relevance: 87.3%)
 export async function search(query: string, projectName: string) {
-  const queryEmbedding = await aiClient.getEmbeddings(query);
   const snippets = await client.codeSnippet.findMany({
     where: { projectName },
   });
   // ... cosine similarity ranking ...
 }
 
-
 🐥 Quack! How can I help? > where are embeddings generated?
 
-Vector embeddings are generated in src/lib/ai-provider.ts using
-the getEmbeddings() method with OpenAI's text-embedding-3-large model.
+Embeddings are generated locally using the local-embeddings module.
+No API calls are made for vector generation, keeping your code private.
 
 💡 Want more details? (y/n) > n
 
@@ -163,48 +153,46 @@ the getEmbeddings() method with OpenAI's text-embedding-3-large model.
 👋 Happy coding!
 ```
 
-
 ## 🛠️ How It Works
 
 1. **Scanning** - Finds all code files (ignoring `node_modules`, `.git`, etc.)
 2. **Parsing** - Uses AST parsing to extract functions/classes from JS/TS
-3. **Chunking** - Breaks other languages into logical chunks
-4. **Embedding** - Generates vector embeddings for each code chunk
+3. **Chunking** - Breaks code into logical chunks
+4. **Local Embedding** - Generates vector embeddings **locally** (no API calls!)
 5. **Storage** - Saves to your PostgreSQL/Neon database
-6. **Search** - Semantic search + AI-powered conversational answers
-
+6. **Search** - Semantic search using cosine similarity + AI-powered conversational answers
 
 ## 🎯 Use Cases
 
 - **Context switching** - Quickly understand projects you haven't touched in months
 - **Onboarding** - New team members can ask questions instead of reading docs
 - **Code archaeology** - Find implementations without grepping
-- **AI coding assistants** - Give Cursor/Claude/ChatGPT persistent codebase context
+- **AI coding assistants** - Give Cursor/Windsurf/Cline/Continue/Aider persistent codebase context
 - **Documentation** - Auto-generate explanations of how things work
-
+- **Privacy-focused** - All embeddings generated locally, no code sent to embedding APIs
 
 ## 📋 Commands Reference
 
 | Command | Description |
 |---------|-------------|
 | `quack` | Start interactive REPL (auto-indexes first time) |
-| `quack --cursor` | Generate `.cursorrules` for Cursor AI |
-| `quack --watch` | Watch mode - auto-update Cursor context on file changes |
+| `quack --context` | Generate context files for ALL AI coding tools |
+| `quack --watch` | Watch mode - auto-update context on file changes |
 | `quack --reindex` | Force reindex the entire codebase |
-
+| `quack --cursor` | [DEPRECATED] Use `--context` instead |
 
 ## 🔑 Supported AI Providers
 
-| Provider | Chat | Embeddings | Cost | Setup |
-|----------|------|------------|------|-------|
-| OpenAI | ✅ GPT-4o-mini | ✅ | $$ | [Get key](https://platform.openai.com/api-keys) |
-| Anthropic | ✅ Claude 3.5 | ❌ | $$$ | [Get key](https://console.anthropic.com/) |
-| Gemini | ✅ Gemini 1.5 | ❌ | FREE | [Get key](https://aistudio.google.com/app/apikey) |
-| DeepSeek | ✅ | ✅ | $ | [Get key](https://platform.deepseek.com/) |
-| Mistral | ✅ | ❌ | $$ | [Get key](https://console.mistral.ai/) |
+| Provider | Used For | Cost | Privacy | Setup |
+|----------|----------|------|---------|-------|
+| **Local** | Embeddings | FREE | 🔒 100% Private | Built-in |
+| OpenAI | Chat answers | $$ | Query only | [Get key](https://platform.openai.com/api-keys) |
+| Anthropic | Chat answers | $$$ | Query only | [Get key](https://console.anthropic.com/) |
+| Gemini | Chat answers | FREE | Query only | [Get key](https://aistudio.google.com/app/apikey) |
+| DeepSeek | Chat answers | $ | Query only | [Get key](https://platform.deepseek.com/) |
+| Mistral | Chat answers | $$ | Query only | [Get key](https://console.mistral.ai/) |
 
-**Note:** If you use Claude, Gemini, or Mistral for chat, you still need an OpenAI or DeepSeek key for embeddings.
-
+**Privacy Note:** QuackStack generates embeddings **locally** on your machine. Only your natural language queries and retrieved code context are sent to the AI provider for generating conversational answers. Your entire codebase is never sent to any API.
 
 ## 🗄️ Database Schema
 
@@ -212,7 +200,7 @@ the getEmbeddings() method with OpenAI's text-embedding-3-large model.
 model codeSnippet {
   id           Int      @id @default(autoincrement())
   content      String
-  embedding    Json
+  embedding    Json     // Stored as JSON array of numbers
   filePath     String
   projectName  String
   language     String?
@@ -228,11 +216,9 @@ model codeSnippet {
 
 Each project is isolated by `projectName` (uses current directory name).
 
-
 ## 🌍 Supported Languages
 
 JavaScript, TypeScript, Python, Go, Rust, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin, Scala, R, Vue, Svelte
-
 
 ## 🎓 Development
 
@@ -243,24 +229,23 @@ pnpm install
 
 pnpm build
 
+# Run locally
 node dist/cli.cjs
-
-node dist/cli.cjs --cursor
+node dist/cli.cjs --context
 node dist/cli.cjs --watch
 ```
 
-
 ## 🗺️ Roadmap
 
-- [ ] Support more embedding providers (Cohere, Voyage AI)
-- [ ] Add filtering by file type, date range, author
-- [ ] Generate automatic codebase documentation
-- [ ] Export Q&A sessions as markdown docs
+- [x] Local embeddings (no API calls!)
+- [x] Support for all major AI coding assistants
 - [ ] VS Code extension
 - [ ] Official Cursor plugin
+- [ ] Export Q&A sessions as markdown docs
+- [ ] Add filtering by file type, date range, author
 - [ ] Support for code diffs and change tracking
 - [ ] Team collaboration features
-
+- [ ] Self-hosted web UI
 
 ## 🤝 Contributing
 
@@ -269,20 +254,22 @@ Contributions welcome! Feel free to:
 - Submit feature requests
 - Open pull requests
 
-
 ## 📄 License
 
 MIT
 
-
 ## 💡 Pro Tips
 
-**Gemini Free Tier**: Start with Google Gemini - it's free and works great for most use cases.
+**Privacy First**: Embeddings are generated locally - your code never leaves your machine during indexing.
 
-**DeepSeek for Production**: If you need cheap embeddings at scale, use DeepSeek (~$0.14 per million tokens).
+**Gemini Free Tier**: Start with Google Gemini for chat responses - it's free and works great for most use cases.
 
-**Cursor Integration**: Run `quack --cursor` once, then `quack --watch &` in the background to keep context always fresh.
+**Universal Context**: Run `quack --context` once to generate context files for ALL major AI coding tools at once.
+
+**Background Watcher**: Run `quack --watch &` in the background to keep context always fresh across all your AI tools.
 
 **Multiple Projects**: Each project gets its own namespace in the database. Just run `quack` in different directories.
 
 **Large Codebases**: First index might take a few minutes. After that, only changed files are re-indexed.
+
+**No Vendor Lock-in**: Unlike other tools, QuackStack works with Cursor, Windsurf, Cline, Continue, and Aider - choose your favorite!
