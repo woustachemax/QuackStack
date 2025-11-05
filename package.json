@@ -1,6 +1,6 @@
 {
   "name": "quackstack",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Your cracked unpaid intern for all things codebase related! AI-powered codebase search and Q&A.",
   "type": "module",
   "main": "dist/cli.cjs",
