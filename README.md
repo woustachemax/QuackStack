@@ -4,6 +4,8 @@
 
 QuackStack is an interactive CLI tool that indexes your codebase using local AI embeddings and lets you ask questions about it conversationally. Perfect for understanding unfamiliar code, onboarding to new projects, or giving your AI coding assistant persistent context.
 
+## 🎯 Quack in Action!
+Check out the QuackStack Live demo [here](https://courageous-spaniel.clueso.site/share/4f5e6395-8ad8-4d18-8e81-f736a6581a25)!
 ## ✨ Features
 
 * 🚀 **Zero-config** - Just run `quack` in any project directory
