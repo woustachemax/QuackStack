@@ -234,4 +234,11 @@ export class AIClient {
   }
 }
 
-export const aiClient = new AIClient();
+let aiClientInstance: AIClient | null = null;
+
+export function getAIClient(): AIClient {
+  if (!aiClientInstance) {
+    aiClientInstance = new AIClient();
+  }
+  return aiClientInstance;
+}

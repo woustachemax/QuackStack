@@ -2,7 +2,7 @@
 
 import { client } from "../lib/database.js";
 import { localEmbeddings } from "../lib/local-embeddings.js";
-import { aiClient } from "../lib/ai-provider.js";
+import { getAIClient } from "../lib/ai-provider.js";
 
 export async function search(query: string, projectName: string) {
   const snippets = await client.codeSnippet.findMany({
@@ -35,6 +35,7 @@ export async function search(query: string, projectName: string) {
     .map((r, i) => `[${i + 1}] ${r.filePath}${r.functionName ? ` (${r.functionName})` : ""}\n${r.content}`)
     .join("\n\n---\n\n");
 
+  const aiClient = getAIClient();
   const answer = await aiClient.generateAnswer(query, context);
   
   return { answer, sources: uniqueResults };
