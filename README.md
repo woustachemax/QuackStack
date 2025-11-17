@@ -17,6 +17,9 @@ Check out the QuackStack Live demo [here](https://courageous-spaniel.clueso.site
 * 📦 **Local database** - Your code stays on your infrastructure
 * 🌍 **Multi-language** - Supports JS/TS, Python, Go, Rust, Java, C/C++, C#, Ruby, PHP, Swift, Kotlin, and more
 
+
+## 💻 Frontend
+Check out the Frontend Repo [here](github.com/woustachemax/quack-web)
 ## 📦 Installation
 
 ### Global Install (Recommended)
