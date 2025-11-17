@@ -19,7 +19,7 @@ Check out the QuackStack Live demo [here](https://courageous-spaniel.clueso.site
 
 
 ## 💻 Frontend
-Check out the Frontend Repo [here](github.com/woustachemax/quack-web)
+Check out the Frontend Repo [here](https://github.com/woustachemax/quack-web)
 ## 📦 Installation
 
 ### Global Install (Recommended)
