@@ -100,18 +100,10 @@ export class AIClient {
         provider: "openai",
         name: "OpenAI",
         models: [
-          "gpt-5",
-          "gpt-5-mini",
-          "gpt-5-nano",
-          "gpt-4.1",
-          "gpt-4.1-mini",
-          "gpt-4.1-nano",
           "gpt-4o",
           "gpt-4o-mini",
           "gpt-4-turbo",
-          "o3",
-          "o4-mini",
-          "o4-mini-high"
+          "gpt-3.5-turbo"
         ],
         defaultModel: "gpt-4o-mini"
       });
@@ -122,15 +114,12 @@ export class AIClient {
         provider: "anthropic",
         name: "Anthropic",
         models: [
-          "claude-opus-4-1",
-          "claude-opus-4",
-          "claude-sonnet-4-5",
-          "claude-sonnet-4",
-          "claude-haiku-4-5",
-          "claude-3-7-sonnet",
-          "claude-3-5-haiku"
+          "claude-opus-4-20250514",
+          "claude-sonnet-4-20250514",
+          "claude-3-7-sonnet-20250219",
+          "claude-3-5-haiku-20241022"
         ],
-        defaultModel: "claude-sonnet-4"
+        defaultModel: "claude-sonnet-4-20250514"
       });
     }
 
@@ -139,16 +128,12 @@ export class AIClient {
         provider: "gemini",
         name: "Gemini",
         models: [
-          "gemini-3",
-          "gemini-3-pro",
-          "gemini-2.5-pro",
-          "gemini-2.5-flash",
-          "gemini-2.5-flash-lite",
-          "gemini-2.0-flash",
+          "gemini-2.0-flash-exp",
           "gemini-1.5-pro",
-          "gemini-1.5-flash"
+          "gemini-1.5-flash",
+          "gemini-1.5-flash-8b"
         ],
-        defaultModel: "gemini-2.5-flash"
+        defaultModel: "gemini-1.5-flash"
       });
     }
 
@@ -170,14 +155,8 @@ export class AIClient {
         name: "Mistral",
         models: [
           "mistral-large-latest",
-          "mistral-large-24.11",
-          "mistral-medium-3",
           "mistral-small-latest",
-          "codestral-25.01",
-          "codestral-latest",
-          "magistral-small-2506",
-          "magistral-medium-2506",
-          "pixtral-12b"
+          "codestral-latest"
         ],
         defaultModel: "mistral-large-latest"
       });
@@ -189,8 +168,8 @@ export class AIClient {
   private getDefaultModel(provider: AIProvider): string {
     const defaults: Record<AIProvider, string> = {
       openai: "gpt-4o-mini",
-      anthropic: "claude-sonnet-4",
-      gemini: "gemini-2.5-flash",
+      anthropic: "claude-sonnet-4-20250514",
+      gemini: "gemini-1.5-flash",
       deepseek: "deepseek-chat",
       mistral: "mistral-large-latest",
     };
