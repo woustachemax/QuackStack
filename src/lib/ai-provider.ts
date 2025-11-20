@@ -99,12 +99,20 @@ export class AIClient {
       providers.push({
         provider: "openai",
         name: "OpenAI",
-        models: ["gpt-4.1",
+        models: [
+          "gpt-5",
+          "gpt-5-mini",
+          "gpt-5-nano",
+          "gpt-4.1",
           "gpt-4.1-mini",
           "gpt-4.1-nano",
+          "gpt-4o",
+          "gpt-4o-mini",
           "gpt-4-turbo",
-          "gpt-3.5-turbo",
-          "gpt-3.5-turbo-0125"],
+          "o3",
+          "o4-mini",
+          "o4-mini-high"
+        ],
         defaultModel: "gpt-4o-mini"
       });
     }
@@ -113,11 +121,14 @@ export class AIClient {
       providers.push({
         provider: "anthropic",
         name: "Anthropic",
-        models: ["claude-opus-4",
+        models: [
+          "claude-opus-4-1",
+          "claude-opus-4",
+          "claude-sonnet-4-5",
           "claude-sonnet-4",
-          "claude-3.7-sonnet",
-          "claude-3.5-haiku"
-
+          "claude-haiku-4-5",
+          "claude-3-7-sonnet",
+          "claude-3-5-haiku"
         ],
         defaultModel: "claude-sonnet-4"
       });
@@ -127,14 +138,16 @@ export class AIClient {
       providers.push({
         provider: "gemini",
         name: "Gemini",
-        models: ["gemini-3",
+        models: [
+          "gemini-3",
+          "gemini-3-pro",
           "gemini-2.5-pro",
           "gemini-2.5-flash",
           "gemini-2.5-flash-lite",
-          "gemini-2.5-flash-image",
-          "gemini-2.0-spark",
-          "gemini-2.0-flash-lite"
-],
+          "gemini-2.0-flash",
+          "gemini-1.5-pro",
+          "gemini-1.5-flash"
+        ],
         defaultModel: "gemini-2.5-flash"
       });
     }
@@ -143,18 +156,10 @@ export class AIClient {
       providers.push({
         provider: "deepseek",
         name: "DeepSeek",
-        models: ["deepseek-r1",
-          "deepseek-r1-zero",
-          "deepseek-r1-70b",
-          "deepseek-r1-32b",
-          "deepseek-r1-14b",
-          "deepseek-r1-8b",
-          "deepseek-r1-7b",
-          "deepseek-r1-1.5b",
-          "deepseek-vl2",
-          "deepseek-vl2-small",
-          "deepseek-vl2-tiny"
-],
+        models: [
+          "deepseek-chat",
+          "deepseek-reasoner"
+        ],
         defaultModel: "deepseek-chat"
       });
     }
@@ -164,17 +169,16 @@ export class AIClient {
         provider: "mistral",
         name: "Mistral",
         models: [
-          "mistral-large",
-          "mistral-medium",
-          "mistral-small",
-          "mistral-7b",
-          "mixtral-8x7b",
-          "mixtral-8x22b",
-          "codestral",
-          "codestral-mamba",
-          "mathstral",
-          "mistral-nemo-12b"
-],
+          "mistral-large-latest",
+          "mistral-large-24.11",
+          "mistral-medium-3",
+          "mistral-small-latest",
+          "codestral-25.01",
+          "codestral-latest",
+          "magistral-small-2506",
+          "magistral-medium-2506",
+          "pixtral-12b"
+        ],
         defaultModel: "mistral-large-latest"
       });
     }
@@ -185,8 +189,8 @@ export class AIClient {
   private getDefaultModel(provider: AIProvider): string {
     const defaults: Record<AIProvider, string> = {
       openai: "gpt-4o-mini",
-      anthropic: "claude-3-5-sonnet-20241022",
-      gemini: "gemini-1.5-flash",
+      anthropic: "claude-sonnet-4",
+      gemini: "gemini-2.5-flash",
       deepseek: "deepseek-chat",
       mistral: "mistral-large-latest",
     };
