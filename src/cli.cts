@@ -47,9 +47,9 @@ program
         });
       });
       
-      console.log(chalk.cyan("\nUsage:"));
-      console.log(chalk.white("  quackstack --provider anthropic --model claude-sonnet-4-5-20250929"));
-      console.log(chalk.white("  quackstack -p openai -m gpt-4o\n"));
+        console.log(chalk.cyan("\nUsage:"));
+        console.log(chalk.white("  quack --provider anthropic --model claude-sonnet-4-20250514"));
+        console.log(chalk.white("  quack -p openai -m gpt-4o\n"));
       process.exit(0);
     }
 
