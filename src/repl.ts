@@ -7,6 +7,34 @@ import path from "path";
 import { detectFileChanges, formatChangeMessage } from "./lib/file-change-detector.js";
 import { getAIClient, resetAIClient } from "./lib/ai-provider.js";
 
+function wrapText(text: string, width: number = process.stdout.columns || 80): string {
+  const lines: string[] = [];
+  const paragraphs = text.split('\n');
+  
+  for (const paragraph of paragraphs) {
+    if (paragraph.length <= width) {
+      lines.push(paragraph);
+      continue;
+    }
+    
+    const words = paragraph.split(' ');
+    let currentLine = '';
+    
+    for (const word of words) {
+      if ((currentLine + word).length <= width) {
+        currentLine += (currentLine ? ' ' : '') + word;
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    
+    if (currentLine) lines.push(currentLine);
+  }
+  
+  return lines.join('\n');
+}
+
 const PROJECT_NAME = path.basename(process.cwd());
 
 export async function startREPL(
@@ -20,7 +48,7 @@ export async function startREPL(
     const aiClient = getAIClient(provider as any, model);
     console.log(chalk.cyan(`Using: ${aiClient.getProviderName()} - ${aiClient.getModel()}`));
     console.log(chalk.gray("💡 Tip: Type '/help' for commands or 'quack --list-models' to see all options"));
-    console.log(chalk.cyan("⚡ Press Ctrl+C to exit\n"));
+    console.log(chalk.cyan("Press Ctrl+C to exit\n"));
   } catch (error: any) {
     console.error(chalk.red(`\nFailed to initialize AI provider: ${error.message}\n`));
     process.exit(1);
@@ -94,7 +122,7 @@ export async function startREPL(
     try {
       const { answer, sources } = await search(query, PROJECT_NAME, provider as any, model);
 
-      console.log(chalk.white(`\n${answer}\n`));
+      console.log(chalk.white(`\n${wrapText(answer)}\n`));
 
       rl.question(chalk.cyan("💡 Want more details? (y/n) > "), (showDetails) => {
         if (showDetails.toLowerCase() === "y") {
@@ -103,7 +131,7 @@ export async function startREPL(
             console.log(
               chalk.gray(`[${i + 1}] ${src.filePath} (relevance: ${(src.score * 100).toFixed(1)}%)`)
             );
-            console.log(chalk.white(src.content));
+            console.log(chalk.white(wrapText(src.content)));
             console.log(chalk.gray("\n---\n"));
           });
         }
@@ -130,7 +158,7 @@ async function handleCommand(command: string, rl: readline.Interface) {
       if (args.length === 0) {
         try {
           const client = getAIClient();
-          console.log(chalk.cyan(`\nCurrent: ${client.getProviderName()} - ${client.getModel()}\n`));
+          console.log(chalk.cyan(`\n🤖 Current: ${client.getProviderName()} - ${client.getModel()}\n`));
         } catch (error: any) {
           console.log(chalk.red(`\n❌ Error: ${error.message}\n`));
         }
@@ -139,7 +167,7 @@ async function handleCommand(command: string, rl: readline.Interface) {
         try {
           resetAIClient();
           const client = getAIClient(undefined, newModel);
-          console.log(chalk.green(`\nSwitched to: ${client.getProviderName()} - ${client.getModel()}\n`));
+          console.log(chalk.green(`\n✅ Switched to: ${client.getProviderName()} - ${client.getModel()}\n`));
         } catch (error: any) {
           console.log(chalk.red(`\n❌ Error: ${error.message}\n`));
         }
@@ -166,7 +194,7 @@ async function handleCommand(command: string, rl: readline.Interface) {
         try {
           resetAIClient();
           const client = getAIClient(newProvider as any);
-          console.log(chalk.green(`\n✅ Switched to: ${client.getProviderName()} - ${client.getModel()}\n`));
+          console.log(chalk.green(`\nSwitched to: ${client.getProviderName()} - ${client.getModel()}\n`));
         } catch (error: any) {
           console.log(chalk.red(`\n❌ Error: ${error.message}\n`));
         }
