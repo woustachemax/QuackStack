@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
-type AIProvider = "openai" | "anthropic" | "gemini" | "deepseek" | "mistral";
+export type AIProvider = "openai" | "anthropic" | "gemini" | "deepseek" | "mistral" | "grok";
 
 interface AIClientConfig {
   provider: AIProvider;
@@ -27,6 +27,7 @@ export class AIClient {
   private gemini?: GoogleGenerativeAI;
   private deepseek?: OpenAI;
   private mistral?: OpenAI;
+  private grok?: OpenAI;
 
   constructor(providerOverride?: AIProvider, modelOverride?: string) {
     const config = this.detectProvider(providerOverride);
@@ -54,7 +55,8 @@ export class AIClient {
         "  QUACKSTACK_ANTHROPIC_KEY\n" +
         "  QUACKSTACK_GEMINI_KEY\n" +
         "  QUACKSTACK_DEEPSEEK_KEY\n" +
-        "  QUACKSTACK_MISTRAL_KEY"
+        "  QUACKSTACK_MISTRAL_KEY\n" +
+        "  QUACKSTACK_GROK_KEY"
       );
     }
 
@@ -88,6 +90,7 @@ export class AIClient {
       gemini: process.env.QUACKSTACK_GEMINI_KEY || "",
       deepseek: process.env.QUACKSTACK_DEEPSEEK_KEY || "",
       mistral: process.env.QUACKSTACK_MISTRAL_KEY || "",
+      grok: process.env.QUACKSTACK_GROK_KEY || "",
     };
     return keyMap[provider] || undefined;
   }
@@ -100,12 +103,20 @@ export class AIClient {
         provider: "openai",
         name: "OpenAI",
         models: [
+          "gpt-5.2",
+          "gpt-5.2-instant",
+          "gpt-5.2-thinking",
+          "gpt-5.2-pro",
+          "gpt-5.1",
+          "o3",
+          "o3-pro",
+          "o4-mini",
           "gpt-4o",
           "gpt-4o-mini",
           "gpt-4-turbo",
           "gpt-3.5-turbo"
         ],
-        defaultModel: "gpt-4o-mini"
+        defaultModel: "gpt-5.2"
       });
     }
 
@@ -114,12 +125,16 @@ export class AIClient {
         provider: "anthropic",
         name: "Anthropic",
         models: [
+          "claude-opus-4-5-20251124",
+          "claude-opus-4-1-20250805",
           "claude-opus-4-20250514",
+          "claude-sonnet-4-5-20250929",
           "claude-sonnet-4-20250514",
+          "claude-haiku-4-5-20251015",
           "claude-3-7-sonnet-20250219",
           "claude-3-5-haiku-20241022"
         ],
-        defaultModel: "claude-sonnet-4-20250514"
+        defaultModel: "claude-sonnet-4-5-20250929"
       });
     }
 
@@ -128,12 +143,17 @@ export class AIClient {
         provider: "gemini",
         name: "Gemini",
         models: [
+          "gemini-3-pro",
+          "gemini-3-deep-think",
+          "gemini-2.5-pro",
+          "gemini-2.5-flash",
+          "gemini-2.5-flash-lite",
           "gemini-2.0-flash-exp",
           "gemini-1.5-pro",
           "gemini-1.5-flash",
           "gemini-1.5-flash-8b"
         ],
-        defaultModel: "gemini-1.5-flash"
+        defaultModel: "gemini-3-pro"
       });
     }
 
@@ -162,16 +182,38 @@ export class AIClient {
       });
     }
 
+    if (process.env.QUACKSTACK_GROK_KEY) {
+      providers.push({
+        provider: "grok",
+        name: "xAI Grok",
+        models: [
+          "grok-4-1-fast-reasoning",
+          "grok-4-1-fast-non-reasoning",
+          "grok-4-fast-reasoning",
+          "grok-4-fast-non-reasoning",
+          "grok-code-fast-1",
+          "grok-4",
+          "grok-3",
+          "grok-3-mini",
+          "grok-2-vision-1212",
+          "grok-2-image-1212",
+          "grok-2-1212"
+        ],
+        defaultModel: "grok-4"
+      });
+    }
+
     return providers;
   }
 
   private getDefaultModel(provider: AIProvider): string {
     const defaults: Record<AIProvider, string> = {
-      openai: "gpt-4o-mini",
-      anthropic: "claude-sonnet-4-20250514",
-      gemini: "gemini-1.5-flash",
+      openai: "gpt-5.2",
+      anthropic: "claude-sonnet-4-5-20250929",
+      gemini: "gemini-3-pro",
       deepseek: "deepseek-chat",
       mistral: "mistral-large-latest",
+      grok: "grok-4",
     };
     return defaults[provider];
   }
@@ -199,6 +241,12 @@ export class AIClient {
           baseURL: "https://api.mistral.ai/v1",
         });
         break;
+      case "grok":
+        this.grok = new OpenAI({
+          apiKey: config.apiKey,
+          baseURL: "https://api.x.ai/v1",
+        });
+        break;
     }
   }
 
@@ -221,6 +269,8 @@ export class AIClient {
           return await this.generateDeepSeek(systemPrompt, userPrompt);
         case "mistral":
           return await this.generateMistral(systemPrompt, userPrompt);
+        case "grok":
+          return await this.generateGrok(systemPrompt, userPrompt);
         default:
           throw new Error(`Unsupported provider: ${this.provider}`);
       }
@@ -292,6 +342,19 @@ export class AIClient {
     return response.choices[0].message.content || "No response generated.";
   }
   
+  private async generateGrok(systemPrompt: string, userPrompt: string): Promise<string> {
+    if (!this.grok) throw new Error("Grok client not initialized");
+    const response = await this.grok.chat.completions.create({
+      model: this.model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+    });
+    return response.choices[0].message.content || "No response generated.";
+  }
+  
   getProviderName(): string {
     const names: Record<AIProvider, string> = {
       openai: "OpenAI",
@@ -299,6 +362,7 @@ export class AIClient {
       gemini: "Gemini",
       deepseek: "DeepSeek",
       mistral: "Mistral",
+      grok: "xAI Grok",
     };
     return names[this.provider];
   }

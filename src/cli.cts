@@ -22,7 +22,7 @@ program
   .option("--readme", "Generate README.md from your codebase")
   .option("--cursor", "[DEPRECATED] Use --context instead")
   .option("-w, --watch", "Watch mode: auto-update context files on file changes")
-  .option("-p, --provider <provider>", "AI provider: openai, anthropic, gemini, deepseek, mistral")
+  .option("-p, --provider <provider>", "AI provider: openai, anthropic, gemini, deepseek, mistral, grok")
   .option("-m, --model <model>", "Specific model to use")
   .option("--list-models", "List available providers and models")
   .action(async (options) => {
@@ -48,8 +48,9 @@ program
       });
       
         console.log(chalk.cyan("\nUsage:"));
-        console.log(chalk.white("  quack --provider anthropic --model claude-sonnet-4-20250514"));
-        console.log(chalk.white("  quack -p openai -m gpt-4o\n"));
+        console.log(chalk.white("  quack --provider anthropic --model claude-sonnet-4-5-20250929"));
+        console.log(chalk.white("  quack -p openai -m gpt-5.2"));
+        console.log(chalk.white("  quack -p grok -m grok-4\n"));
       process.exit(0);
     }
 
