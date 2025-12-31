@@ -19,11 +19,11 @@ async function askQuestion(query: string): Promise<boolean> {
 }
 
 export async function generateAgentMd(projectName: string, outputPath?: string) {
-  const agentPath = outputPath || path.join(process.cwd(), "agent.md");
+  const agentPath = outputPath || path.join(process.cwd(), "AGENTS.md");
   const exists = await fs.access(agentPath).then(() => true).catch(() => false);
   
   if (exists) {
-    const shouldOverwrite = await askQuestion("⚠️  agent.md already exists. Overwrite? (y/n): ");
+    const shouldOverwrite = await askQuestion("⚠️  AGENTS.md already exists. Overwrite? (y/n): ");
     if (!shouldOverwrite) {
       console.log("Cancelled.");
       return;
@@ -71,11 +71,11 @@ ${s.content.slice(0, 300)}...
 
   const aiClient = getAIClient();
   const prompt = `
-You are an expert at creating agent.md files following the agents.md specification (https://agents.md/).
+You are an expert at creating AGENTS.md files following the agents.md specification (https://agents.md/).
 
-Based on the codebase context provided, generate a comprehensive agent.md file that describes this project as an AI agent.
+Based on the codebase context provided, generate a comprehensive AGENTS.md file that describes this project as an AI agent.
 
-The agent.md should include:
+The AGENTS.md should include:
 
 # Agent Metadata
 - name: A descriptive name for this codebase agent
@@ -127,11 +127,11 @@ Codebase Context:
 ${context}
 `;
 
-  console.log("Generating agent.md...");
+  console.log("Generating AGENTS.md...");
   const agentMd = await aiClient.generateAnswer(prompt, context);
 
   await fs.writeFile(agentPath, agentMd, "utf-8");
-  console.log(`agent.md generated at ${agentPath}`);
+  console.log(`AGENTS.md generated at ${agentPath}`);
 }
 
 function detectTechnologies(snippets: any[]): string[] {
