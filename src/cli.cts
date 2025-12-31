@@ -6,6 +6,7 @@ import chalk from "chalk";
 import { startREPL } from "./repl.js";
 import { generateContextFiles, updateGlobalContext, watchAndUpdateContext } from "./lib/context-generator.js";
 import { generateReadme } from "./commands/readme.js";
+import { generateAgentMd } from "./commands/agents.js";
 import { getAIClient } from "./lib/ai-provider.js";
 import path from "path";
 
@@ -20,6 +21,7 @@ program
   .option("-c, --context", "Generate context files for ALL AI coding tools")
   .option("-d, --docs", "Generate CODEBASE.md")
   .option("--readme", "Generate README.md from your codebase")
+  .option("--agent", "Generate agent.md configuration file")
   .option("--cursor", "[DEPRECATED] Use --context instead")
   .option("-w, --watch", "Watch mode: auto-update context files on file changes")
   .option("-p, --provider <provider>", "AI provider: openai, anthropic, gemini, deepseek, mistral, grok")
@@ -47,10 +49,10 @@ program
         });
       });
       
-        console.log(chalk.cyan("\nUsage:"));
-        console.log(chalk.white("  quack --provider anthropic --model claude-sonnet-4-5-20250929"));
-        console.log(chalk.white("  quack -p openai -m gpt-5.2"));
-        console.log(chalk.white("  quack -p grok -m grok-4\n"));
+      console.log(chalk.cyan("\nUsage:"));
+      console.log(chalk.white("  quack --provider anthropic --model claude-sonnet-4-5-20250929"));
+      console.log(chalk.white("  quack -p openai -m gpt-5.2"));
+      console.log(chalk.white("  quack -p grok -m grok-4\n"));
       process.exit(0);
     }
 
@@ -58,6 +60,11 @@ program
     await new Promise(res => setTimeout(res, 1500));
     title.stop();
     
+    if (options.agent) {
+      await generateAgentMd(PROJECT_NAME);
+      process.exit(0);
+    }
+
     if (options.readme) {
       await generateReadme(PROJECT_NAME);
       process.exit(0);
