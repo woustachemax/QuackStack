@@ -70,7 +70,6 @@ export class GitHistory {
     try {
       const relativePath = path.relative(this.repoRoot, filePath);
       
-      // Get commit history for file
       const logOutput = execSync(
         `git log --follow --format="%H|%an|%ae|%aI|%s" -n ${limit} -- "${relativePath}"`,
         {
@@ -94,7 +93,6 @@ export class GitHistory {
         };
       });
 
-      // Get author statistics
       const authorMap = new Map<string, { author: string; email: string; commitCount: number }>();
       commits.forEach(commit => {
         const key = commit.email;
@@ -221,7 +219,6 @@ export class GitHistory {
     if (!this.isGitRepo) return [];
 
     try {
-      // Get basic author stats
       const authorOutput = execSync(
         `git shortlog -sne --all`,
         {
@@ -249,7 +246,6 @@ export class GitHistory {
         }
       });
 
-      // Get recent activity for each author
       authorMap.forEach((stats, email) => {
         try {
           const lastCommit = execSync(
@@ -276,12 +272,14 @@ export class GitHistory {
           ).trim();
 
           lineStats.split("\n").forEach(line => {
-            const [added, removed] = line.split("\t").map(n => parseInt(n) || 0);
+            if (!line.trim()) return;
+            const parts = line.split("\t");
+            const added = parseInt(parts[0]) || 0;
+            const removed = parseInt(parts[1]) || 0;
             stats.linesAdded += added;
             stats.linesRemoved += removed;
           });
         } catch {
-          // Ignore errors for individual authors
         }
       });
 
@@ -402,4 +400,8 @@ export class GitHistory {
   }
 }
 
-export const gitHistory = new GitHistory();
+export let gitHistory = new GitHistory();
+
+export function initGitHistory(projectPath: string) {
+  gitHistory = new GitHistory(projectPath);
+}

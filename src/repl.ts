@@ -93,7 +93,7 @@ export async function startREPL(
     }
 
     console.log(chalk.gray("🔍 Indexing your codebase..."));
-    await ingest(process.cwd(), PROJECT_NAME, true);
+    await ingest(process.cwd(), PROJECT_NAME, false);
     console.log(chalk.green("Indexing complete\n"));
   }
 

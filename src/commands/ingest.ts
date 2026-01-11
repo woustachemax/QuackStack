@@ -4,7 +4,7 @@ import { scanDir } from "../lib/scanner.js";
 import { chunkCode } from "../lib/chunker.js";
 import { saveToDB, saveAuthorToDB } from "../lib/database.js";
 import { localEmbeddings } from "../lib/local-embeddings.js";
-import { gitHistory } from "../lib/git-history.js";
+import { gitHistory, initGitHistory } from "../lib/git-history.js";
 
 export async function ingest(
   rootDir: string, 
@@ -12,6 +12,8 @@ export async function ingest(
   silent = false,
   includeGitHistory = true
 ) {
+  initGitHistory(rootDir);
+  
   if (!silent) console.log("Starting ingestion...");
   
   const files = await scanDir(rootDir);
@@ -111,8 +113,9 @@ export async function ingest(
 
 
   if (isGitRepo && includeGitHistory && !silent) {
-    console.log("Computing author statistics...");
+    console.log("📈 Computing author statistics...");
     const authorStats = gitHistory.getAuthorStats();
+    console.log(`Found ${authorStats.length} authors`);
     
     for (const stats of authorStats) {
     
@@ -135,7 +138,7 @@ export async function ingest(
       });
     }
     
-    if (!silent) console.log(`Stored stats for ${authorStats.length} contributors`);
+    if (!silent) console.log(`✅ Stored stats for ${authorStats.length} contributors`);
   }
 
   if (!silent) {
