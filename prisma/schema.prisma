@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -23,8 +20,40 @@ model codeSnippet {
   functionName String?
   lineStart    Int?     
   lineEnd      Int?     
+  
+  lastCommitHash    String?
+  lastCommitAuthor  String?
+  lastCommitEmail   String?
+  lastCommitDate    DateTime?
+  lastCommitMessage String?
+  totalCommits      Int?       @default(0)
+  primaryAuthor     String?
+  primaryAuthorEmail String?
+  fileOwnerCommits  Int?       @default(0)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([projectName])
+  @@index([lastCommitDate])
+  @@index([primaryAuthor])
+}
+
+model gitAuthor {
+  id              Int      @id @default(autoincrement())
+  projectName     String
+  author          String
+  email           String
+  totalCommits    Int      @default(0)
+  linesAdded      Int      @default(0)
+  linesRemoved    Int      @default(0)
+  recentActivity  DateTime?
+  filesOwned      String[] 
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectName, email])
+  @@index([projectName])
+  @@index([recentActivity])
 }
