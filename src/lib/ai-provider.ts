@@ -103,6 +103,7 @@ export class AIClient {
         provider: "openai",
         name: "OpenAI",
         models: [
+          "gpt-5.3-codex",
           "gpt-5.2",
           "gpt-5.2-instant",
           "gpt-5.2-thinking",
@@ -125,6 +126,7 @@ export class AIClient {
         provider: "anthropic",
         name: "Anthropic",
         models: [
+          "claude-opus-4.6",
           "claude-opus-4-5-20251124",
           "claude-opus-4-1-20250805",
           "claude-opus-4-20250514",
