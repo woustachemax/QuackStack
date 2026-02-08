@@ -117,7 +117,7 @@ export class AIClient {
           "gpt-4-turbo",
           "gpt-3.5-turbo"
         ],
-        defaultModel: "gpt-5.2"
+        defaultModel: "gpt-5.3-codex"
       });
     }
 
@@ -136,7 +136,7 @@ export class AIClient {
           "claude-3-7-sonnet-20250219",
           "claude-3-5-haiku-20241022"
         ],
-        defaultModel: "claude-sonnet-4-5-20250929"
+        defaultModel: "claude-opus-4.6"
       });
     }
 
