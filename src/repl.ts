@@ -7,6 +7,29 @@ import path from "path";
 import { detectFileChanges, formatChangeMessage } from "./lib/file-change-detector.js";
 import { getAIClient, resetAIClient } from "./lib/ai-provider.js";
 
+function displayGrandiosWelcome() {
+  const colors = [chalk.red, chalk.yellow, chalk.green, chalk.cyan, chalk.blue, chalk.magenta];
+  
+  console.log("\n" + chalk.cyan("…".repeat(100)));
+  
+  const asciiLines = [
+    "   ██████╗ ██╗   ██╗ █████╗  ██████╗██╗  ██╗███████╗████████╗ █████╗  ██████╗██╗  ██╗",
+    "   ██╔═══██╗██║   ██║██╔══██╗██╔════╝██║ ██╔╝██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝",
+    "   ██║   ██║██║   ██║███████║██║     █████╔╝ ███████╗   ██║   ███████║██║     █████╔╝ ",
+    "   ██║▄▄██║██║   ██║██╔══██║██║     ██╔═██╗ ╚════██║   ██║   ██╔══██║██║     ██╔═██╗ ",
+    "   ╚██████╔╝╚██████╔╝██║  ██║╚██████╗██║  ██╗███████║   ██║   ██║  ██║╚██████╗██║  ██╗",
+    "    ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝",
+  ];
+  
+  console.log("");
+  asciiLines.forEach((line, idx) => {
+    console.log(colors[idx % colors.length].bold(line));
+  });
+  
+  console.log("\n" + chalk.cyan("…".repeat(100)));
+  console.log(chalk.bold.white(" ✨ Let's get started.\n"));
+}
+
 function wrapText(text: string, width: number = process.stdout.columns || 80): string {
   const lines: string[] = [];
   const paragraphs = text.split('\n');
@@ -42,7 +65,7 @@ export async function startREPL(
   provider?: string,
   model?: string
 ) {
-  console.log(chalk.cyan("\n🐥 Welcome to QuackStack!\n"));
+  displayGrandiosWelcome();
 
   try {
     const aiClient = getAIClient(provider as any, model);

@@ -58,10 +58,6 @@ program
       process.exit(0);
     }
 
-    const title = ChalkAnimation.rainbow("QuackStack\n");
-    await new Promise(res => setTimeout(res, 1500));
-    title.stop();
-    
     if (options.agent) {
       await generateAgentMd(PROJECT_NAME);
       process.exit(0);
