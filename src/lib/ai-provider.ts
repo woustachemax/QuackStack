@@ -33,7 +33,7 @@ export class AIClient {
     const config = this.detectProvider(providerOverride);
     this.provider = config.provider;
     this.model = modelOverride || config.model || this.getDefaultModel(config.provider);
-    
+
     const availableProvider = this.getAvailableProviders().find(p => p.provider === this.provider);
     if (availableProvider && !availableProvider.models.includes(this.model)) {
       throw new Error(
@@ -41,13 +41,13 @@ export class AIClient {
         `Available models: ${availableProvider.models.join(', ')}`
       );
     }
-    
+
     this.initializeClient(config);
   }
 
   private detectProvider(override?: AIProvider): AIClientConfig {
     const availableProviders = this.getAvailableProviders();
-    
+
     if (availableProviders.length === 0) {
       throw new Error(
         "No AI API key found. Set one of:\n" +
@@ -126,6 +126,7 @@ export class AIClient {
         provider: "anthropic",
         name: "Anthropic",
         models: [
+          "claude-sonnet-4-6-20260218",
           "claude-opus-4.6",
           "claude-opus-4-5-20251124",
           "claude-opus-4-1-20250805",
@@ -136,7 +137,7 @@ export class AIClient {
           "claude-3-7-sonnet-20250219",
           "claude-3-5-haiku-20241022"
         ],
-        defaultModel: "claude-opus-4.6"
+        defaultModel: "claude-sonnet-4-6-20260218"
       });
     }
 
@@ -211,7 +212,7 @@ export class AIClient {
   private getDefaultModel(provider: AIProvider): string {
     const defaults: Record<AIProvider, string> = {
       openai: "gpt-5.2",
-      anthropic: "claude-sonnet-4-5-20250929",
+      anthropic: "claude-sonnet-4-6-20260218",
       gemini: "gemini-3-pro",
       deepseek: "deepseek-chat",
       mistral: "mistral-large-latest",
@@ -253,10 +254,10 @@ export class AIClient {
   }
 
   async generateAnswer(query: string, context: string): Promise<string> {
-    const systemPrompt = 
+    const systemPrompt =
       "You are a helpful coding assistant. Answer questions about the codebase using the provided code snippets. " +
       "Be concise and reference specific files when relevant. Format your responses in markdown for clarity.";
-    
+
     const userPrompt = `Code context:\n\n${context}\n\nQuestion: ${query}`;
 
     try {
@@ -306,18 +307,18 @@ export class AIClient {
       messages: [{ role: "user", content: userPrompt }],
     });
     const textContent = response.content.find((c) => c.type === "text");
-    return textContent && textContent.type === "text" 
-      ? textContent.text 
+    return textContent && textContent.type === "text"
+      ? textContent.text
       : "No response generated.";
   }
-  
+
   private async generateGemini(systemPrompt: string, userPrompt: string): Promise<string> {
     if (!this.gemini) throw new Error("Gemini client not initialized");
     const model = this.gemini.getGenerativeModel({ model: this.model });
     const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
     return result.response.text();
   }
-  
+
   private async generateDeepSeek(systemPrompt: string, userPrompt: string): Promise<string> {
     if (!this.deepseek) throw new Error("DeepSeek client not initialized");
     const response = await this.deepseek.chat.completions.create({
@@ -330,7 +331,7 @@ export class AIClient {
     });
     return response.choices[0].message.content || "No response generated.";
   }
-  
+
   private async generateMistral(systemPrompt: string, userPrompt: string): Promise<string> {
     if (!this.mistral) throw new Error("Mistral client not initialized");
     const response = await this.mistral.chat.completions.create({
@@ -343,7 +344,7 @@ export class AIClient {
     });
     return response.choices[0].message.content || "No response generated.";
   }
-  
+
   private async generateGrok(systemPrompt: string, userPrompt: string): Promise<string> {
     if (!this.grok) throw new Error("Grok client not initialized");
     const response = await this.grok.chat.completions.create({
@@ -356,7 +357,7 @@ export class AIClient {
     });
     return response.choices[0].message.content || "No response generated.";
   }
-  
+
   getProviderName(): string {
     const names: Record<AIProvider, string> = {
       openai: "OpenAI",
