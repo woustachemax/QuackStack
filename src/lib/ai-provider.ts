@@ -103,6 +103,9 @@ export class AIClient {
         provider: "openai",
         name: "OpenAI",
         models: [
+          "gpt-5.4-pro",
+          "gpt-5.4-thinking",
+          "gpt-5.4",
           "gpt-5.3-codex",
           "gpt-5.2",
           "gpt-5.2-instant",
@@ -117,7 +120,7 @@ export class AIClient {
           "gpt-4-turbo",
           "gpt-3.5-turbo"
         ],
-        defaultModel: "gpt-5.3-codex"
+        defaultModel: "gpt-5.4"
       });
     }
 
@@ -211,7 +214,7 @@ export class AIClient {
 
   private getDefaultModel(provider: AIProvider): string {
     const defaults: Record<AIProvider, string> = {
-      openai: "gpt-5.2",
+      openai: "gpt-5.4-pro",
       anthropic: "claude-sonnet-4-6-20260218",
       gemini: "gemini-3-pro",
       deepseek: "deepseek-chat",
