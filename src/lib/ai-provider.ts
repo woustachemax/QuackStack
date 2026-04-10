@@ -149,17 +149,14 @@ export class AIClient {
         provider: "gemini",
         name: "Gemini",
         models: [
-          "gemini-3-pro",
-          "gemini-3-deep-think",
+          "gemini-3.1-pro-preview",
+          "gemini-3-flash-preview",
+          "gemini-3.1-flash-lite-preview",
           "gemini-2.5-pro",
           "gemini-2.5-flash",
-          "gemini-2.5-flash-lite",
-          "gemini-2.0-flash-exp",
-          "gemini-1.5-pro",
-          "gemini-1.5-flash",
-          "gemini-1.5-flash-8b"
+          "gemini-2.5-flash-lite"
         ],
-        defaultModel: "gemini-3-pro"
+        defaultModel: "gemini-2.5-pro"
       });
     }
 
@@ -216,7 +213,7 @@ export class AIClient {
     const defaults: Record<AIProvider, string> = {
       openai: "gpt-5.4-pro",
       anthropic: "claude-sonnet-4-6-20260218",
-      gemini: "gemini-3-pro",
+      gemini: "gemini-2.5-pro",
       deepseek: "deepseek-chat",
       mistral: "mistral-large-latest",
       grok: "grok-4",
