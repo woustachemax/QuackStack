@@ -103,24 +103,15 @@ export class AIClient {
         provider: "openai",
         name: "OpenAI",
         models: [
-          "gpt-5.4-pro",
-          "gpt-5.4-thinking",
+          "gpt-5.5",
           "gpt-5.4",
+          "gpt-5.4-mini",
           "gpt-5.3-codex",
-          "gpt-5.2",
-          "gpt-5.2-instant",
-          "gpt-5.2-thinking",
-          "gpt-5.2-pro",
-          "gpt-5.1",
-          "o3",
-          "o3-pro",
-          "o4-mini",
+          "gpt-5.3-instant",
           "gpt-4o",
           "gpt-4o-mini",
-          "gpt-4-turbo",
-          "gpt-3.5-turbo"
         ],
-        defaultModel: "gpt-5.4"
+        defaultModel: "gpt-5.5"
       });
     }
 
@@ -129,18 +120,15 @@ export class AIClient {
         provider: "anthropic",
         name: "Anthropic",
         models: [
-          "claude-sonnet-4-6-20260218",
-          "claude-opus-4.6",
-          "claude-opus-4-5-20251124",
-          "claude-opus-4-1-20250805",
-          "claude-opus-4-20250514",
+          "claude-opus-4-7",
+          "claude-sonnet-4-6",
+          "claude-haiku-4-5-20251001",
+          "claude-opus-4-6",
           "claude-sonnet-4-5-20250929",
-          "claude-sonnet-4-20250514",
-          "claude-haiku-4-5-20251015",
-          "claude-3-7-sonnet-20250219",
-          "claude-3-5-haiku-20241022"
+          "claude-opus-4-5-20251101",
+          "claude-opus-4-1-20250805",
         ],
-        defaultModel: "claude-sonnet-4-6-20260218"
+        defaultModel: "claude-opus-4-7"
       });
     }
 
@@ -154,9 +142,9 @@ export class AIClient {
           "gemini-3.1-flash-lite-preview",
           "gemini-2.5-pro",
           "gemini-2.5-flash",
-          "gemini-2.5-flash-lite"
+          "gemini-2.5-flash-lite",
         ],
-        defaultModel: "gemini-2.5-pro"
+        defaultModel: "gemini-3.1-pro-preview"
       });
     }
 
@@ -165,10 +153,10 @@ export class AIClient {
         provider: "deepseek",
         name: "DeepSeek",
         models: [
-          "deepseek-chat",
-          "deepseek-reasoner"
+          "deepseek-v4-pro",
+          "deepseek-v4-flash",
         ],
-        defaultModel: "deepseek-chat"
+        defaultModel: "deepseek-v4-pro"
       });
     }
 
@@ -177,11 +165,15 @@ export class AIClient {
         provider: "mistral",
         name: "Mistral",
         models: [
-          "mistral-large-latest",
-          "mistral-small-latest",
-          "codestral-latest"
+          "mistral-large-3-25-12",
+          "mistral-medium-3-1-25-08",
+          "mistral-small-4-0-26-03",
+          "devstral-2-25-12",
+          "codestral-25-08",
+          "magistral-medium-1-2-25-09",
+          "magistral-small-1-2-25-09",
         ],
-        defaultModel: "mistral-large-latest"
+        defaultModel: "mistral-large-3-25-12"
       });
     }
 
@@ -190,19 +182,12 @@ export class AIClient {
         provider: "grok",
         name: "xAI Grok",
         models: [
+          "grok-4.20-reasoning",
+          "grok-4.20-non-reasoning",
           "grok-4-1-fast-reasoning",
           "grok-4-1-fast-non-reasoning",
-          "grok-4-fast-reasoning",
-          "grok-4-fast-non-reasoning",
-          "grok-code-fast-1",
-          "grok-4",
-          "grok-3",
-          "grok-3-mini",
-          "grok-2-vision-1212",
-          "grok-2-image-1212",
-          "grok-2-1212"
         ],
-        defaultModel: "grok-4"
+        defaultModel: "grok-4.20-reasoning"
       });
     }
 
@@ -211,12 +196,12 @@ export class AIClient {
 
   private getDefaultModel(provider: AIProvider): string {
     const defaults: Record<AIProvider, string> = {
-      openai: "gpt-5.4-pro",
-      anthropic: "claude-sonnet-4-6-20260218",
-      gemini: "gemini-2.5-pro",
-      deepseek: "deepseek-chat",
-      mistral: "mistral-large-latest",
-      grok: "grok-4",
+      openai: "gpt-5.5",
+      anthropic: "claude-opus-4-7",
+      gemini: "gemini-3.1-pro-preview",
+      deepseek: "deepseek-v4-pro",
+      mistral: "mistral-large-3-25-12",
+      grok: "grok-4.20-reasoning",
     };
     return defaults[provider];
   }
