@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
-export type AIProvider = "openai" | "anthropic" | "gemini" | "deepseek" | "mistral" | "grok";
+export type AIProvider = "openai" | "anthropic" | "gemini" | "deepseek" | "mistral" | "grok" | "primeintellect";
 
 interface AIClientConfig {
   provider: AIProvider;
@@ -28,6 +28,7 @@ export class AIClient {
   private deepseek?: OpenAI;
   private mistral?: OpenAI;
   private grok?: OpenAI;
+  private primeintellect?: OpenAI;
 
   constructor(providerOverride?: AIProvider, modelOverride?: string) {
     const config = this.detectProvider(providerOverride);
@@ -56,7 +57,8 @@ export class AIClient {
         "  QUACKSTACK_GEMINI_KEY\n" +
         "  QUACKSTACK_DEEPSEEK_KEY\n" +
         "  QUACKSTACK_MISTRAL_KEY\n" +
-        "  QUACKSTACK_GROK_KEY"
+        "  QUACKSTACK_GROK_KEY\n" +
+        "  QUACKSTACK_PRIMEINTELLECT_KEY"
       );
     }
 
@@ -91,6 +93,7 @@ export class AIClient {
       deepseek: process.env.QUACKSTACK_DEEPSEEK_KEY || "",
       mistral: process.env.QUACKSTACK_MISTRAL_KEY || "",
       grok: process.env.QUACKSTACK_GROK_KEY || "",
+      primeintellect: process.env.QUACKSTACK_PRIMEINTELLECT_KEY || "",
     };
     return keyMap[provider] || undefined;
   }
@@ -103,15 +106,15 @@ export class AIClient {
         provider: "openai",
         name: "OpenAI",
         models: [
+          "gpt-5.6-terra",
+          "gpt-5.6-sol",
+          "gpt-5.6-luna",
           "gpt-5.5",
           "gpt-5.4",
-          "gpt-5.4-mini",
-          "gpt-5.3-codex",
-          "gpt-5.3-instant",
           "gpt-4o",
           "gpt-4o-mini",
         ],
-        defaultModel: "gpt-5.5"
+        defaultModel: "gpt-5.6-terra"
       });
     }
 
@@ -120,15 +123,15 @@ export class AIClient {
         provider: "anthropic",
         name: "Anthropic",
         models: [
+          "claude-sonnet-5",
+          "claude-fable-5",
+          "claude-opus-4-8",
+          "claude-haiku-4-5-20251001",
           "claude-opus-4-7",
           "claude-sonnet-4-6",
-          "claude-haiku-4-5-20251001",
           "claude-opus-4-6",
-          "claude-sonnet-4-5-20250929",
-          "claude-opus-4-5-20251101",
-          "claude-opus-4-1-20250805",
         ],
-        defaultModel: "claude-opus-4-7"
+        defaultModel: "claude-sonnet-5"
       });
     }
 
@@ -138,7 +141,7 @@ export class AIClient {
         name: "Gemini",
         models: [
           "gemini-3.1-pro-preview",
-          "gemini-3-flash-preview",
+          "gemini-3.5-flash",
           "gemini-3.1-flash-lite-preview",
           "gemini-2.5-pro",
           "gemini-2.5-flash",
@@ -166,7 +169,7 @@ export class AIClient {
         name: "Mistral",
         models: [
           "mistral-large-3-25-12",
-          "mistral-medium-3-1-25-08",
+          "mistral-medium-3-5-26-04",
           "mistral-small-4-0-26-03",
           "devstral-2-25-12",
           "codestral-25-08",
@@ -182,12 +185,24 @@ export class AIClient {
         provider: "grok",
         name: "xAI Grok",
         models: [
+          "grok-4.5",
           "grok-4.20-reasoning",
           "grok-4.20-non-reasoning",
           "grok-4-1-fast-reasoning",
           "grok-4-1-fast-non-reasoning",
         ],
-        defaultModel: "grok-4.20-reasoning"
+        defaultModel: "grok-4.5"
+      });
+    }
+
+    if (process.env.QUACKSTACK_PRIMEINTELLECT_KEY) {
+      providers.push({
+        provider: "primeintellect",
+        name: "Prime Intellect",
+        models: [
+          "prime-intellect/intellect-3",
+        ],
+        defaultModel: "prime-intellect/intellect-3"
       });
     }
 
@@ -196,12 +211,13 @@ export class AIClient {
 
   private getDefaultModel(provider: AIProvider): string {
     const defaults: Record<AIProvider, string> = {
-      openai: "gpt-5.5",
-      anthropic: "claude-opus-4-7",
+      openai: "gpt-5.6-terra",
+      anthropic: "claude-sonnet-5",
       gemini: "gemini-3.1-pro-preview",
       deepseek: "deepseek-v4-pro",
       mistral: "mistral-large-3-25-12",
-      grok: "grok-4.20-reasoning",
+      grok: "grok-4.5",
+      primeintellect: "prime-intellect/intellect-3",
     };
     return defaults[provider];
   }
@@ -235,6 +251,12 @@ export class AIClient {
           baseURL: "https://api.x.ai/v1",
         });
         break;
+      case "primeintellect":
+        this.primeintellect = new OpenAI({
+          apiKey: config.apiKey,
+          baseURL: "https://api.pinference.ai/api/v1",
+        });
+        break;
     }
   }
 
@@ -259,6 +281,8 @@ export class AIClient {
           return await this.generateMistral(systemPrompt, userPrompt);
         case "grok":
           return await this.generateGrok(systemPrompt, userPrompt);
+        case "primeintellect":
+          return await this.generatePrimeIntellect(systemPrompt, userPrompt);
         default:
           throw new Error(`Unsupported provider: ${this.provider}`);
       }
@@ -343,6 +367,19 @@ export class AIClient {
     return response.choices[0].message.content || "No response generated.";
   }
 
+  private async generatePrimeIntellect(systemPrompt: string, userPrompt: string): Promise<string> {
+    if (!this.primeintellect) throw new Error("Prime Intellect client not initialized");
+    const response = await this.primeintellect.chat.completions.create({
+      model: this.model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+    });
+    return response.choices[0].message.content || "No response generated.";
+  }
+
   getProviderName(): string {
     const names: Record<AIProvider, string> = {
       openai: "OpenAI",
@@ -351,6 +388,7 @@ export class AIClient {
       deepseek: "DeepSeek",
       mistral: "Mistral",
       grok: "xAI Grok",
+      primeintellect: "Prime Intellect",
     };
     return names[this.provider];
   }
