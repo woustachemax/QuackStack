@@ -1,4 +1,4 @@
-Onboarding — QuackStack
+Onboarding
 =======================
 
 This is a developer onboarding guide for QuackStack: how to build, run, and extend it. It assumes you're comfortable with TypeScript/JavaScript and PostgreSQL.
