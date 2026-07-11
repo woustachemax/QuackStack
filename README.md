@@ -6,6 +6,8 @@ QuackStack is an interactive CLI tool that indexes your codebase using local AI 
 
 [Live Demo](https://courageous-spaniel.clueso.site/share/4f5e6395-8ad8-4d18-8e81-f736a6581a25) | [Documentation](https://quackstack.siddharththakkar.xyz/docs) | [Frontend](https://github.com/woustachemax/quack-web)
 
+To skip docs and use QuackStack seamlessly, use the [Onboarding Guide](ONBOARDING.md).
+
 ## Features
 
 * **Zero-config** - Just run `quack` in any project directory
