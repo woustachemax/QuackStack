@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
-export type AIProvider = "openai" | "anthropic" | "gemini" | "deepseek" | "mistral" | "grok" | "primeintellect";
+export type AIProvider = "openai" | "anthropic" | "gemini" | "deepseek" | "mistral" | "grok" | "primeintellect" | "moonshot";
 
 interface AIClientConfig {
   provider: AIProvider;
@@ -29,6 +29,7 @@ export class AIClient {
   private mistral?: OpenAI;
   private grok?: OpenAI;
   private primeintellect?: OpenAI;
+  private moonshot?: OpenAI;
 
   constructor(providerOverride?: AIProvider, modelOverride?: string) {
     const config = this.detectProvider(providerOverride);
@@ -58,7 +59,8 @@ export class AIClient {
         "  QUACKSTACK_DEEPSEEK_KEY\n" +
         "  QUACKSTACK_MISTRAL_KEY\n" +
         "  QUACKSTACK_GROK_KEY\n" +
-        "  QUACKSTACK_PRIMEINTELLECT_KEY"
+        "  QUACKSTACK_PRIMEINTELLECT_KEY\n" +
+        "  QUACKSTACK_MOONSHOT_KEY"
       );
     }
 
@@ -94,6 +96,7 @@ export class AIClient {
       mistral: process.env.QUACKSTACK_MISTRAL_KEY || "",
       grok: process.env.QUACKSTACK_GROK_KEY || "",
       primeintellect: process.env.QUACKSTACK_PRIMEINTELLECT_KEY || "",
+      moonshot: process.env.QUACKSTACK_MOONSHOT_KEY || "",
     };
     return keyMap[provider] || undefined;
   }
@@ -109,6 +112,7 @@ export class AIClient {
           "gpt-5.6-terra",
           "gpt-5.6-sol",
           "gpt-5.6-luna",
+          "gpt-5.3-codex",
           "gpt-5.5",
           "gpt-5.4",
           "gpt-4o",
@@ -190,6 +194,7 @@ export class AIClient {
           "grok-4.20-non-reasoning",
           "grok-4-1-fast-reasoning",
           "grok-4-1-fast-non-reasoning",
+          "grok-code-fast-1",
         ],
         defaultModel: "grok-4.5"
       });
@@ -206,6 +211,19 @@ export class AIClient {
       });
     }
 
+    if (process.env.QUACKSTACK_MOONSHOT_KEY) {
+      providers.push({
+        provider: "moonshot",
+        name: "Moonshot AI",
+        models: [
+          "kimi-k3",
+          "kimi-k2.7-code",
+          "kimi-k2.6",
+        ],
+        defaultModel: "kimi-k3"
+      });
+    }
+
     return providers;
   }
 
@@ -218,6 +236,7 @@ export class AIClient {
       mistral: "mistral-large-3-25-12",
       grok: "grok-4.5",
       primeintellect: "prime-intellect/intellect-3",
+      moonshot: "kimi-k3",
     };
     return defaults[provider];
   }
@@ -257,6 +276,12 @@ export class AIClient {
           baseURL: "https://api.pinference.ai/api/v1",
         });
         break;
+      case "moonshot":
+        this.moonshot = new OpenAI({
+          apiKey: config.apiKey,
+          baseURL: "https://api.moonshot.ai/v1",
+        });
+        break;
     }
   }
 
@@ -283,6 +308,8 @@ export class AIClient {
           return await this.generateGrok(systemPrompt, userPrompt);
         case "primeintellect":
           return await this.generatePrimeIntellect(systemPrompt, userPrompt);
+        case "moonshot":
+          return await this.generateMoonshot(systemPrompt, userPrompt);
         default:
           throw new Error(`Unsupported provider: ${this.provider}`);
       }
@@ -380,6 +407,19 @@ export class AIClient {
     return response.choices[0].message.content || "No response generated.";
   }
 
+  private async generateMoonshot(systemPrompt: string, userPrompt: string): Promise<string> {
+    if (!this.moonshot) throw new Error("Moonshot client not initialized");
+    const response = await this.moonshot.chat.completions.create({
+      model: this.model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+    });
+    return response.choices[0].message.content || "No response generated.";
+  }
+
   getProviderName(): string {
     const names: Record<AIProvider, string> = {
       openai: "OpenAI",
@@ -389,6 +429,7 @@ export class AIClient {
       mistral: "Mistral",
       grok: "xAI Grok",
       primeintellect: "Prime Intellect",
+      moonshot: "Moonshot AI",
     };
     return names[this.provider];
   }

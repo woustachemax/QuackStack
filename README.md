@@ -14,7 +14,7 @@ To skip docs and use QuackStack seamlessly, use the [Onboarding Guide](ONBOARDIN
 * **Smart code parsing** - Automatically extracts functions and classes
 * **Interactive REPL** - Ask questions conversationally, stays open until Ctrl+C
 * **100% Local embeddings** - No API calls for vector generation, your code stays private
-* **AI-powered answers** - Uses OpenAI, Claude, Gemini, DeepSeek, Grok, Mistral, or Prime Intellect for conversational responses
+* **AI-powered answers** - Uses OpenAI, Claude, Gemini, DeepSeek, Grok, Mistral, Prime Intellect, or Moonshot AI for conversational responses
 * **Git history integration** - Track authorship, commit history, and code ownership
 * **Universal AI tool support** - Auto-generate context for Cursor, Windsurf, Cline, Continue, and Aider
 * **Local database** - Your code stays on your infrastructure
@@ -44,32 +44,16 @@ pnpm build
 ### 1. Create `.env` in your project root
 
 ```bash
-# REQUIRED: Database for storing code embeddings
 QUACKSTACK_DATABASE_URL=postgresql://user:pass@host:port/dbname
 
-# REQUIRED: Choose ONE AI provider for conversational answers
-# (Embeddings are computed locally - no API calls!)
-
-# Option 1: OpenAI
 QUACKSTACK_OPENAI_KEY=sk-...
-
-# Option 2: Anthropic Claude
 QUACKSTACK_ANTHROPIC_KEY=sk-ant-...
-
-# Option 3: Google Gemini (has free tier!)
 QUACKSTACK_GEMINI_KEY=AIza...
-
-# Option 4: xAI Grok
 QUACKSTACK_GROK_KEY=xai-...
-
-# Option 5: DeepSeek (cheapest option)
 QUACKSTACK_DEEPSEEK_KEY=sk-...
-
-# Option 6: Mistral AI
 QUACKSTACK_MISTRAL_KEY=...
-
-# Option 7: Prime Intellect (open, decentralized-compute models)
 QUACKSTACK_PRIMEINTELLECT_KEY=...
+QUACKSTACK_MOONSHOT_KEY=sk-...
 ```
 
 ### 2. Initialize database
@@ -246,6 +230,7 @@ Happy coding!
 | DeepSeek | Chat answers | $ | Query only | [Get key](https://platform.deepseek.com/) |
 | Mistral | Chat answers | $$ | Query only | [Get key](https://console.mistral.ai/) |
 | Prime Intellect | Chat answers | $ | Query only | [Get key](https://app.primeintellect.ai/) |
+| Moonshot AI | Chat answers | $$ | Query only | [Get key](https://platform.moonshot.ai/) |
 
 **Privacy Note:** QuackStack generates embeddings locally on your machine. Only your natural language queries and retrieved code context are sent to the AI provider for generating conversational answers. Your entire codebase is never sent to any API.
 
