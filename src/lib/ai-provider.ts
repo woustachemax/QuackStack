@@ -128,6 +128,7 @@ export class AIClient {
         name: "Anthropic",
         models: [
           "claude-sonnet-5",
+          "claude-opus-5",
           "claude-fable-5",
           "claude-opus-4-8",
           "claude-haiku-4-5-20251001",
@@ -145,8 +146,9 @@ export class AIClient {
         name: "Gemini",
         models: [
           "gemini-3.1-pro-preview",
-          "gemini-3.5-flash",
-          "gemini-3.1-flash-lite-preview",
+          "gemini-3.7-flash",
+          "gemini-3.6-flash",
+          "gemini-3.5-flash-lite",
           "gemini-2.5-pro",
           "gemini-2.5-flash",
           "gemini-2.5-flash-lite",
@@ -189,6 +191,7 @@ export class AIClient {
         provider: "grok",
         name: "xAI Grok",
         models: [
+          "grok-4.6",
           "grok-4.5",
           "grok-4.20-reasoning",
           "grok-4.20-non-reasoning",
@@ -196,7 +199,7 @@ export class AIClient {
           "grok-4-1-fast-non-reasoning",
           "grok-code-fast-1",
         ],
-        defaultModel: "grok-4.5"
+        defaultModel: "grok-4.6"
       });
     }
 
@@ -218,6 +221,7 @@ export class AIClient {
         models: [
           "kimi-k3",
           "kimi-k2.7-code",
+          "kimi-k2.7-code-highspeed",
           "kimi-k2.6",
         ],
         defaultModel: "kimi-k3"
@@ -234,7 +238,7 @@ export class AIClient {
       gemini: "gemini-3.1-pro-preview",
       deepseek: "deepseek-v4-pro",
       mistral: "mistral-large-3-25-12",
-      grok: "grok-4.5",
+      grok: "grok-4.6",
       primeintellect: "prime-intellect/intellect-3",
       moonshot: "kimi-k3",
     };
