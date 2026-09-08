@@ -16,6 +16,7 @@ To skip docs and use QuackStack seamlessly, use the [Onboarding Guide](ONBOARDIN
 * **100% Local embeddings** - No API calls for vector generation, your code stays private
 * **AI-powered answers** - Uses OpenAI, Claude, Gemini, DeepSeek, Grok, Mistral, Prime Intellect, or Moonshot AI for conversational responses
 * **Git history integration** - Track authorship, commit history, and code ownership
+* **Agent-attributed blame** - Tell human commits from AI-agent commits (Claude Code, Cursor, Windsurf, Copilot, ...), with a confidence level, and resolve any line back to the agent that wrote it
 * **Universal AI tool support** - Auto-generate context for Cursor, Windsurf, Cline, Continue, and Aider
 * **Local database** - Your code stays on your infrastructure
 * **Multi-language** - Supports JS/TS, Python, Go, Rust, Java, C/C++, C#, Ruby, PHP, Swift, Kotlin, and more
@@ -126,6 +127,13 @@ quack --watch
 # View contributor statistics
 quack authors
 
+# Split contributor stats by human vs AI agent
+quack authors --agents
+
+# Resolve a line back to the commit, author, and agent that last changed it
+quack blame <file>:<line>
+quack blame src/lib/ai-provider.ts:130
+
 # View recently modified files
 quack recent
 quack recent --days 30
@@ -133,6 +141,57 @@ quack recent --days 30
 # View repository information
 quack git-info
 ```
+
+### Agent-Attributed Blame
+
+QuackStack reads the `Co-Authored-By:` trailers and commit-message patterns that AI
+coding tools leave behind, so it can tell which commits were written by an agent and
+which one. It never adds an LLM call for this - it's all git history plus the AST index.
+
+Attribution carries a confidence level:
+
+| Confidence | Signal |
+|------------|--------|
+| `high` | A known agent's `Co-Authored-By:` trailer (Claude Code, Cursor, Windsurf, GitHub Copilot, Devin) |
+| `medium` | A recognizable agent commit-message pattern (e.g. Aider) |
+| `low` | A generic bot/agent trailer, or a commit-cadence + diff-size fingerprint with no explicit signal |
+| `human` | No agent signal |
+
+```bash
+$ quack authors --agents
+
+🤖 Agent vs Human Ownership
+
+Claude Code  —  1 commit, 4 files touched
+   active 2026-07-11 → 2026-07-11
+   confidence: high 1 / medium 0 / low 0
+
+Suspected (unattributed)  —  5 commits, 24 files touched
+   active 2025-10-01 → 2026-01-11
+   confidence: high 0 / medium 0 / low 5
+
+Humans  —  71 commits, 31 files touched
+   active 2025-10-02 → 2026-08-26
+
+6/77 commits (8%) attributed to agents
+```
+
+```bash
+$ quack blame src/lib/ai-provider.ts:130
+
+src/lib/ai-provider.ts:130   (in AIClient)
+
+commit  b804f6f  new models, add Prime Intellect provider
+author  woustachemax <sid2011thakkar@gmail.com>
+date    2026-07-11
+agent   Claude Code   confidence: high
+session —
+```
+
+`quack blame` works without indexing (it classifies the commit message on the fly);
+run `quack --reindex` first to also get the cadence-based `low`-confidence signals and
+the enclosing function name. Function resolution uses the AST index, which is precise
+for JS/TS and coarser for other languages.
 
 ### Force Reindex
 
@@ -198,7 +257,7 @@ Happy coding!
 2. **Parsing** - Uses AST parsing to extract functions/classes
 3. **Chunking** - Breaks code into logical chunks
 4. **Local Embedding** - Generates vector embeddings locally (no API calls)
-5. **Git Enrichment** - Extracts commit history, authorship, and ownership data
+5. **Git Enrichment** - Extracts commit history, authorship, ownership data, and per-commit agent attribution (mapping diff hunks to the functions they changed)
 6. **Storage** - Saves to your PostgreSQL database
 7. **Search** - Semantic search using cosine similarity + AI-powered conversational answers
 
@@ -215,6 +274,8 @@ Happy coding!
 | `quack --reindex` | Force reindex the entire codebase |
 | `quack --list-models` | Show available AI providers and models |
 | `quack authors` | View contributor statistics |
+| `quack authors --agents` | Split contributor stats by human vs AI agent |
+| `quack blame <file>:<line>` | Resolve a line to its commit, author, and agent |
 | `quack recent [--days N]` | View recently modified files |
 | `quack git-info` | View repository information |
 
@@ -284,6 +345,38 @@ model gitAuthor {
   @@index([projectName])
   @@index([recentActivity])
 }
+
+model commit {
+  hash            String   @id
+  projectName     String
+  authorName      String
+  authorEmail     String
+  agentName       String?
+  agentConfidence String   @default("human")
+  sessionId       String?
+  message         String
+  authoredAt      DateTime
+  createdAt       DateTime @default(now())
+
+  files commitFile[]
+
+  @@index([projectName])
+  @@index([projectName, agentName])
+  @@index([authoredAt])
+}
+
+model commitFile {
+  id               Int    @id @default(autoincrement())
+  commitHash       String
+  projectName      String
+  filePath         String
+  functionsTouched Json
+
+  commit commit @relation(fields: [commitHash], references: [hash], onDelete: Cascade)
+
+  @@unique([commitHash, filePath])
+  @@index([projectName, filePath])
+}
 ```
 
 ## Supported Languages
@@ -296,6 +389,7 @@ JavaScript, TypeScript, Python, Go, Rust, Java, C, C++, C#, Ruby, PHP, Swift, Ko
 - **Onboarding** - New team members can ask questions instead of reading docs
 - **Code archaeology** - Find implementations without grepping
 - **Code ownership** - Identify who wrote and maintains specific parts of the codebase
+- **Agent accountability** - See how much of the codebase was written by AI agents, and trace a bug back to the agent and commit that shipped it
 - **AI coding assistants** - Give Cursor/Windsurf/Cline/Continue/Aider persistent codebase context
 - **Documentation** - Auto-generate explanations of how things work
 - **Privacy-focused** - All embeddings generated locally, no code sent to embedding APIs
@@ -338,5 +432,7 @@ MIT
 **Large Codebases**: First index might take a few minutes. After that, only changed files are re-indexed.
 
 **Git Integration**: QuackStack automatically enriches your codebase with git history - no setup required. Track authorship, view recent changes, and understand code ownership.
+
+**Agent Attribution**: Run `quack authors --agents` to see the human/agent split of your history, or `quack blame <file>:<line>` to find out which agent last touched a line. Works on any repo whose agent commits carry the usual `Co-Authored-By:` trailers.
 
 **No Vendor Lock-in**: Unlike other tools, QuackStack works with Cursor, Windsurf, Cline, Continue, and Aider - choose your favorite!
