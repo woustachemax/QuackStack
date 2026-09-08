@@ -11,6 +11,14 @@ export interface GitCommit {
   filesChanged: string[];
 }
 
+export interface GitCommitFull {
+  hash: string;
+  author: string;
+  email: string;
+  date: Date;
+  message: string;
+}
+
 export interface GitBlameInfo {
   author: string;
   email: string;
@@ -397,6 +405,154 @@ export class GitHistory {
 
   getRepositoryRoot(): string {
     return this.repoRoot;
+  }
+
+  private git(args: string): string {
+    return execSync(`git ${args}`, {
+      cwd: this.repoRoot,
+      encoding: "utf-8",
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+  }
+
+  getAllCommits(limit?: number): GitCommitFull[] {
+    if (!this.isGitRepo) return [];
+
+    try {
+      const cap = limit ? `-n ${limit}` : "";
+      const out = this.git(
+        `log ${cap} --no-merges --format="%H%x1f%an%x1f%ae%x1f%aI%x1f%B%x1e"`
+      );
+
+      return out
+        .split("\x1e")
+        .map((rec) => rec.replace(/^\s+/, ""))
+        .filter((rec) => rec.length > 0)
+        .map((rec) => {
+          const [hash, author, email, date, message = ""] = rec.split("\x1f");
+          return {
+            hash,
+            author,
+            email,
+            date: new Date(date),
+            message: message.trim(),
+          };
+        });
+    } catch (error) {
+      console.error("Error getting all commits:", error);
+      return [];
+    }
+  }
+
+  getCommitStats(hash: string): { filesChanged: number; linesAdded: number; linesRemoved: number } {
+    const empty = { filesChanged: 0, linesAdded: 0, linesRemoved: 0 };
+    if (!this.isGitRepo) return empty;
+
+    try {
+      const out = this.git(`show ${hash} --numstat --format="" --no-color`).trim();
+      if (!out) return empty;
+
+      let filesChanged = 0;
+      let linesAdded = 0;
+      let linesRemoved = 0;
+
+      for (const line of out.split("\n")) {
+        if (!line.trim()) continue;
+        const [added, removed] = line.split("\t");
+        filesChanged++;
+        linesAdded += parseInt(added) || 0;
+        linesRemoved += parseInt(removed) || 0;
+      }
+
+      return { filesChanged, linesAdded, linesRemoved };
+    } catch {
+      return empty;
+    }
+  }
+
+  getCommitFileHunks(hash: string): Map<string, Array<[number, number]>> {
+    const result = new Map<string, Array<[number, number]>>();
+    if (!this.isGitRepo) return result;
+
+    try {
+      const out = this.git(`show ${hash} --unified=0 --format="" --no-color`);
+
+      let currentFile: string | null = null;
+
+      for (const line of out.split("\n")) {
+        const fileMatch = line.match(/^\+\+\+ b\/(.+)$/);
+        if (fileMatch) {
+          currentFile = fileMatch[1] === "/dev/null" ? null : fileMatch[1];
+          continue;
+        }
+
+        if (line.startsWith("--- ") || line.startsWith("diff --git")) {
+          continue;
+        }
+
+        const hunkMatch = line.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/);
+        if (hunkMatch && currentFile) {
+          const start = parseInt(hunkMatch[1]);
+          const count = hunkMatch[2] === undefined ? 1 : parseInt(hunkMatch[2]);
+          if (count === 0) continue;
+          const ranges = result.get(currentFile) || [];
+          ranges.push([start, start + count - 1]);
+          result.set(currentFile, ranges);
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error(`Error getting hunks for ${hash}:`, error);
+      return result;
+    }
+  }
+
+  getFileAtCommit(hash: string, relativePath: string): string | null {
+    if (!this.isGitRepo) return null;
+    try {
+      return this.git(`show ${hash}:"${relativePath}"`);
+    } catch {
+      return null;
+    }
+  }
+
+  getBlameForLine(
+    filePath: string,
+    line: number
+  ): { hash: string; author: string; email: string; summary: string; authoredAt: Date } | null {
+    if (!this.isGitRepo) return null;
+
+    try {
+      const relativePath = path.isAbsolute(filePath)
+        ? path.relative(this.repoRoot, filePath)
+        : filePath;
+
+      const out = this.git(`blame -L ${line},${line} --porcelain -- "${relativePath}"`);
+      const lines = out.split("\n");
+
+      const info: { hash?: string; author?: string; email?: string; summary?: string; authoredAt?: Date } = {};
+      info.hash = lines[0]?.split(" ")[0];
+
+      for (const l of lines) {
+        if (l.startsWith("author ")) info.author = l.substring(7);
+        else if (l.startsWith("author-mail ")) info.email = l.substring(12).replace(/[<>]/g, "");
+        else if (l.startsWith("author-time ")) info.authoredAt = new Date(parseInt(l.substring(12)) * 1000);
+        else if (l.startsWith("summary ")) info.summary = l.substring(8);
+      }
+
+      if (!info.hash) return null;
+      return {
+        hash: info.hash,
+        author: info.author || "Unknown",
+        email: info.email || "",
+        summary: info.summary || "",
+        authoredAt: info.authoredAt || new Date(0),
+      };
+    } catch {
+      return null;
+    }
   }
 }
 

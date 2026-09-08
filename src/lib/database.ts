@@ -77,7 +77,93 @@ export async function saveAuthorToDB(data: AuthorData) {
   });
 }
 
+interface CommitData {
+  hash: string;
+  projectName: string;
+  authorName: string;
+  authorEmail: string;
+  agentName: string | null;
+  agentConfidence: string;
+  sessionId: string | null;
+  message: string;
+  authoredAt: Date;
+}
+
+interface CommitFileData {
+  commitHash: string;
+  projectName: string;
+  filePath: string;
+  functionsTouched: Array<{ name: string | null; lineStart: number | null; lineEnd: number | null }>;
+}
+
+export async function clearCommits(projectName: string) {
+  await client.commitFile.deleteMany({ where: { projectName } });
+  await client.commit.deleteMany({ where: { projectName } });
+}
+
+export async function saveCommit(data: CommitData) {
+  await client.commit.upsert({
+    where: { hash: data.hash },
+    create: data,
+    update: {
+      agentName: data.agentName,
+      agentConfidence: data.agentConfidence,
+      sessionId: data.sessionId,
+      message: data.message,
+    },
+  });
+}
+
+export async function saveCommitFiles(rows: CommitFileData[]) {
+  if (rows.length === 0) return;
+  await client.commitFile.createMany({
+    data: rows.map((r) => ({
+      commitHash: r.commitHash,
+      projectName: r.projectName,
+      filePath: r.filePath,
+      functionsTouched: r.functionsTouched,
+    })),
+    skipDuplicates: true,
+  });
+}
+
+export async function getProjectCommits(projectName: string) {
+  return await client.commit.findMany({
+    where: { projectName },
+    include: { files: true },
+    orderBy: { authoredAt: "asc" },
+  });
+}
+
+export async function getCommitByHash(hash: string) {
+  return await client.commit.findUnique({
+    where: { hash },
+    include: { files: true },
+  });
+}
+
+export async function getFunctionAtLine(projectName: string, filePath: string, line: number) {
+  const snippets = await client.codeSnippet.findMany({
+    where: {
+      projectName,
+      filePath,
+      functionName: { not: null },
+      lineStart: { lte: line },
+      lineEnd: { gte: line },
+    },
+    select: { functionName: true, lineStart: true, lineEnd: true },
+    orderBy: { lineStart: "desc" },
+  });
+  return snippets[0] || null;
+}
+
 export async function clearProject(projectName: string) {
+  await client.commitFile.deleteMany({
+    where: { projectName },
+  });
+  await client.commit.deleteMany({
+    where: { projectName },
+  });
   await client.codeSnippet.deleteMany({
     where: { projectName },
   });

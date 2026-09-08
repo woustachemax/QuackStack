@@ -5,6 +5,7 @@ import { chunkCode } from "../lib/chunker.js";
 import { saveToDB, saveAuthorToDB } from "../lib/database.js";
 import { localEmbeddings } from "../lib/local-embeddings.js";
 import { gitHistory, initGitHistory } from "../lib/git-history.js";
+import { ingestCommits } from "../lib/commit-ingest.js";
 
 export async function ingest(
   rootDir: string, 
@@ -139,6 +140,12 @@ export async function ingest(
     }
     
     if (!silent) console.log(`✅ Stored stats for ${authorStats.length} contributors`);
+  }
+
+  if (isGitRepo && includeGitHistory) {
+    if (!silent) console.log("🔗 Attributing commits...");
+    await ingestCommits(projectName, gitHistory.getRepositoryRoot());
+    if (!silent) console.log("✅ Commit attribution complete");
   }
 
   if (!silent) {

@@ -8,8 +8,9 @@ import { generateContextFiles, updateGlobalContext, watchAndUpdateContext } from
 import { generateReadme } from "./commands/readme.js";
 import { generateAgentMd } from "./commands/agents.js";
 import { getAIClient } from "./lib/ai-provider.js";
-import { getProjectAuthors, getRecentlyModifiedFiles } from "./lib/database.js";
+import { getProjectAuthors, getRecentlyModifiedFiles, getProjectCommits, getCommitByHash, getFunctionAtLine } from "./lib/database.js";
 import { gitHistory } from "./lib/git-history.js";
+import { classifyCommit, AgentConfidence } from "./lib/agent-attribution.js";
 import path from "path";
 
 const program = new Command();
@@ -93,17 +94,34 @@ program
     await startREPL(options.reindex, options.provider, options.model);
   });
 
+const CONFIDENCE_COLOR: Record<AgentConfidence, (s: string) => string> = {
+  high: chalk.green,
+  medium: chalk.yellow,
+  low: chalk.gray,
+  human: chalk.gray,
+};
+
+function shortHash(hash: string): string {
+  return hash.substring(0, 7);
+}
+
 program
   .command("authors")
   .description("Show contributor statistics for this project")
-  .action(async () => {
+  .option("--agents", "Split ownership by human vs agent (Claude Code, Cursor, ...)")
+  .action(async (options) => {
     if (!gitHistory.isRepository()) {
       console.log(chalk.red("❌ Not a git repository"));
       process.exit(1);
     }
 
+    if (options.agents) {
+      await showAgentAuthors();
+      process.exit(0);
+    }
+
     console.log(chalk.cyan("\n📊 Contributor Statistics\n"));
-    
+
     const authors = await getProjectAuthors(PROJECT_NAME);
     
     if (authors.length === 0) {
@@ -192,5 +210,139 @@ program
       console.log();
     });
   });
+
+program
+  .command("blame <target>")
+  .description("Resolve <file>:<line> to the commit, author, and agent that last changed it")
+  .action(async (target: string) => {
+    if (!gitHistory.isRepository()) {
+      console.log(chalk.red("❌ Not a git repository"));
+      process.exit(1);
+    }
+
+    const idx = target.lastIndexOf(":");
+    if (idx === -1) {
+      console.log(chalk.red("Usage: quack blame <file>:<line>   e.g. quack blame src/lib/ai-provider.ts:130"));
+      process.exit(1);
+    }
+
+    const filePart = target.substring(0, idx);
+    const line = parseInt(target.substring(idx + 1));
+    if (!Number.isFinite(line) || line < 1) {
+      console.log(chalk.red(`Invalid line number: "${target.substring(idx + 1)}"`));
+      process.exit(1);
+    }
+
+    const repoRoot = gitHistory.getRepositoryRoot();
+    const absPath = path.isAbsolute(filePart) ? filePart : path.resolve(process.cwd(), filePart);
+    const relPath = path.relative(repoRoot, absPath);
+
+    const blame = gitHistory.getBlameForLine(relPath, line);
+    if (!blame) {
+      console.log(chalk.red(`Could not blame ${relPath}:${line} (file not tracked, or line out of range)`));
+      process.exit(1);
+    }
+
+    const stored = await getCommitByHash(blame.hash).catch(() => null);
+    let agentName: string | null;
+    let confidence: AgentConfidence;
+    let sessionId: string | null;
+
+    if (stored) {
+      agentName = stored.agentName;
+      confidence = stored.agentConfidence as AgentConfidence;
+      sessionId = stored.sessionId;
+    } else {
+      const msg = gitHistory.getCommitMessage(blame.hash) || blame.summary;
+      const attr = classifyCommit(msg);
+      agentName = attr.agentName;
+      confidence = attr.confidence;
+      sessionId = attr.sessionId;
+      console.log(chalk.gray("(commit not indexed — run 'quack --reindex' for cadence-based signals)"));
+    }
+
+    const fn = await getFunctionAtLine(PROJECT_NAME, absPath, line).catch(() => null);
+    const inFn = fn?.functionName ? chalk.gray(`   (in ${fn.functionName})`) : "";
+
+    const agentLine =
+      confidence === "human" || !agentName
+        ? chalk.gray(confidence === "low" ? "suspected agent (unattributed)" : "human")
+        : CONFIDENCE_COLOR[confidence](`${agentName}`);
+
+    console.log();
+    console.log(chalk.white(`${relPath}:${line}`) + inFn);
+    console.log();
+    console.log(chalk.white("commit  ") + chalk.yellow(shortHash(blame.hash)) + chalk.gray(`  ${blame.summary}`));
+    console.log(chalk.white("author  ") + `${blame.author} <${blame.email}>`);
+    console.log(chalk.white("date    ") + chalk.gray(blame.authoredAt.toISOString().split("T")[0]));
+    console.log(chalk.white("agent   ") + agentLine + chalk.gray(`   confidence: ${confidence}`));
+    console.log(chalk.white("session ") + (sessionId ? chalk.cyan(sessionId) : chalk.gray("—")));
+    console.log();
+  });
+
+async function showAgentAuthors() {
+  console.log(chalk.cyan("\n🤖 Agent vs Human Ownership\n"));
+
+  const commits = await getProjectCommits(PROJECT_NAME);
+  if (commits.length === 0) {
+    console.log(chalk.yellow("No commit data found. Run 'quack --reindex' first."));
+    return;
+  }
+
+  interface Bucket {
+    label: string;
+    commits: number;
+    files: Set<string>;
+    first: Date;
+    last: Date;
+    conf: Record<AgentConfidence, number>;
+  }
+
+  const buckets = new Map<string, Bucket>();
+
+  const bucketKey = (agentName: string | null, confidence: AgentConfidence): string => {
+    if (confidence === "human") return "Humans";
+    if (!agentName) return "Suspected (unattributed)";
+    return agentName;
+  };
+
+  for (const c of commits) {
+    const conf = c.agentConfidence as AgentConfidence;
+    const key = bucketKey(c.agentName, conf);
+    let b = buckets.get(key);
+    if (!b) {
+      b = { label: key, commits: 0, files: new Set(), first: c.authoredAt, last: c.authoredAt, conf: { high: 0, medium: 0, low: 0, human: 0 } };
+      buckets.set(key, b);
+    }
+    b.commits++;
+    b.conf[conf]++;
+    if (c.authoredAt < b.first) b.first = c.authoredAt;
+    if (c.authoredAt > b.last) b.last = c.authoredAt;
+    for (const f of c.files) b.files.add(f.filePath);
+  }
+
+  const ordered = Array.from(buckets.values()).sort((a, b) => {
+    if (a.label === "Humans") return 1;
+    if (b.label === "Humans") return -1;
+    return b.commits - a.commits;
+  });
+
+  for (const b of ordered) {
+    const isAgent = b.label !== "Humans";
+    const header = isAgent ? chalk.green(b.label) : chalk.white(b.label);
+    console.log(header + chalk.gray(`  —  ${b.commits} commit${b.commits === 1 ? "" : "s"}, ${b.files.size} file${b.files.size === 1 ? "" : "s"} touched`));
+    const span = `${b.first.toISOString().split("T")[0]} → ${b.last.toISOString().split("T")[0]}`;
+    console.log(chalk.gray(`   active ${span}`));
+    if (isAgent) {
+      console.log(chalk.gray(`   confidence: high ${b.conf.high} / medium ${b.conf.medium} / low ${b.conf.low}`));
+    }
+    console.log();
+  }
+
+  const total = commits.length;
+  const agentCommits = commits.filter((c) => c.agentConfidence !== "human").length;
+  const pct = total > 0 ? Math.round((agentCommits / total) * 100) : 0;
+  console.log(chalk.cyan(`${agentCommits}/${total} commits (${pct}%) attributed to agents\n`));
+}
 
 program.parse();

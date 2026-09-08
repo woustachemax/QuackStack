@@ -48,12 +48,45 @@ model gitAuthor {
   linesAdded      Int      @default(0)
   linesRemoved    Int      @default(0)
   recentActivity  DateTime?
-  filesOwned      String[] 
-  
+  filesOwned      String[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([projectName, email])
   @@index([projectName])
   @@index([recentActivity])
+}
+
+model commit {
+  hash            String   @id
+  projectName     String
+  authorName      String
+  authorEmail     String
+  agentName       String?
+  agentConfidence String   @default("human")
+  sessionId       String?
+  message         String
+  authoredAt      DateTime
+
+  createdAt DateTime @default(now())
+
+  files commitFile[]
+
+  @@index([projectName])
+  @@index([projectName, agentName])
+  @@index([authoredAt])
+}
+
+model commitFile {
+  id               Int    @id @default(autoincrement())
+  commitHash       String
+  projectName      String
+  filePath         String
+  functionsTouched Json
+
+  commit commit @relation(fields: [commitHash], references: [hash], onDelete: Cascade)
+
+  @@unique([commitHash, filePath])
+  @@index([projectName, filePath])
 }

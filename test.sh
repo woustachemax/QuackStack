@@ -92,6 +92,20 @@ echo ""
 run_test "Help command" "quack --help"
 run_test "Version command" "quack --version"
 
+echo -e "${YELLOW}Testing: Agent-attributed blame (on quackstack's own repo)${NC}"
+BLAME_OUT=$(quack blame src/lib/ai-provider.ts:130 2>&1)
+if echo "$BLAME_OUT" | grep -q "b804f6f" && echo "$BLAME_OUT" | grep -qi "Claude Code"; then
+  echo -e "${GREEN}✓ PASSED${NC}\n"
+  ((TESTS_PASSED++))
+else
+  echo -e "${RED}✗ FAILED${NC}"
+  echo "$BLAME_OUT"
+  echo ""
+  ((TESTS_FAILED++))
+fi
+
+run_test "Agent authors breakdown" "quack authors --agents"
+
 echo "📁 Creating test directory..."
 TEST_DIR=$(mktemp -d)
 cp .env "$TEST_DIR/"
